@@ -1,6 +1,14 @@
 # AI Shark Tank
 
+<p align="center">
+  <img src="static/image.png" alt="AI Shark Tank preview" width="900" />
+</p>
+
 `AI Shark Tank` is a cinematic browser-based Shark Tank simulator where the founder, the five sharks, the offers, and the counters are all AI agents. The app is built for screenshots, short videos, and social-ready demos.
+
+## Demo
+
+[Demo](https://x.com/diegocabezas01/status/2036499979934572573?s=20)
 
 ## Quick start
 
