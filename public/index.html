@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Shark Tank</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.176.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="studio-app">
+      <section class="studio-shell" aria-live="polite">
+        <div class="scene-root" id="scene-root"></div>
+
+        <div class="ui-overlay">
+          <header class="top-hud">
+            <div class="hud-cluster">
+              <div class="hud-pill hud-pill-rec">
+                <span class="hud-rec-dot" aria-hidden="true"></span>
+                <span>REC</span>
+              </div>
+              <div class="hud-pill hud-pill-time" id="hud-timecode">00:00:00</div>
+            </div>
+
+            <div class="hud-copy">
+              <span>Studio 01</span>
+              <strong>AI Shark Tank</strong>
+            </div>
+          </header>
+
+          <section class="moment-banner" id="moment-banner" aria-live="polite">
+            <span class="moment-rail" aria-hidden="true"></span>
+            <span class="moment-kicker" id="moment-kicker">Founder move</span>
+            <strong class="moment-title" id="moment-title">Stand by</strong>
+            <p class="moment-detail" id="moment-detail">A big decision lands here when the tank shifts.</p>
+          </section>
+
+          <section class="deal-stamp" id="deal-stamp" aria-live="polite">
+            <span class="deal-stamp-grid" aria-hidden="true"></span>
+            <div class="deal-stamp-check" aria-hidden="true">✓</div>
+            <span class="deal-stamp-kicker" id="deal-stamp-kicker">Deal locked</span>
+            <strong class="deal-stamp-amount" id="deal-stamp-amount">$100,000</strong>
+            <strong class="deal-stamp-company" id="deal-stamp-company">Pitch Engine Labs</strong>
+            <p class="deal-stamp-shark" id="deal-stamp-shark">with Max</p>
+          </section>
+
+          <div class="bubble-layer" id="bubble-layer">
+            <article class="actor-bubble founder-bubble" id="founder-bubble">
+              <span class="bubble-meta" id="founder-meta">Founder</span>
+              <p class="bubble-text" id="founder-text">
+                Press Generate. The founder enters from the hallway and starts pitching.
+              </p>
+            </article>
+          </div>
+
+          <div class="tag-layer" id="tag-layer">
+            <div class="actor-tag founder-tag" id="founder-tag">
+              <strong class="actor-tag-name" id="founder-name">Waiting backstage</strong>
+              <span class="actor-tag-status" id="founder-tag-status">Founder</span>
+            </div>
+          </div>
+
+          <footer class="control-bar">
+            <div class="control-copy">
+              <p class="status-copy" id="status-copy"></p>
+            </div>
+
+            <div class="control-actions">
+              <label class="tts-toggle" for="tts-toggle">
+                <input class="tts-toggle-input" id="tts-toggle" type="checkbox" />
+                <span class="tts-toggle-track" aria-hidden="true">
+                  <span class="tts-toggle-knob"></span>
+                </span>
+                <span class="tts-toggle-copy" id="tts-toggle-copy">Voice off</span>
+              </label>
+
+              <button class="report-button" id="report-button" type="button" disabled>
+                Download report
+              </button>
+
+              <button class="generate-button" id="generate-button" type="button">Generate</button>
+            </div>
+
+            <p class="disclosure-copy" id="disclosure-copy"></p>
+          </footer>
+        </div>
+      </section>
+    </main>
+
+    <template id="actor-bubble-template">
+      <article class="actor-bubble shark-bubble">
+        <span class="bubble-meta"></span>
+        <p class="bubble-text"></p>
+      </article>
+    </template>
+
+    <template id="actor-tag-template">
+      <div class="actor-tag shark-tag">
+        <strong class="actor-tag-name"></strong>
+        <span class="actor-tag-status"></span>
+      </div>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

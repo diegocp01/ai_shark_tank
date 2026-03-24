@@ -1,0 +1,24 @@
+{
+  "name": "ai-shark-tank",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js",
+    "test:node": "node --test tests/node-server.test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.7.1",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "three": "^0.183.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "supertest": "^7.2.2"
+  }
+}
