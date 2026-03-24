@@ -3,5 +3,4 @@
 __pycache__/
 *.pyc
 node_modules/
-npm-debug.log*
-
+npm-debug.log*.DS_Store
