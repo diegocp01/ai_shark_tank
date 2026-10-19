@@ -1,306 +1,235 @@
-import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
 
-const SHARKS = [
-  {
-    id: "rex",
-    displayName: "Rex",
-    fullName: "Rex The Skeptic",
-    persona: "The Skeptic",
-    color: "#ff6b57",
-  },
-  {
-    id: "luna",
-    displayName: "Luna",
-    fullName: "Luna The Visionary",
-    persona: "The Visionary",
-    color: "#7ce8c8",
-  },
-  {
-    id: "max",
-    displayName: "Max",
-    fullName: "Max The Numbers Shark",
-    persona: "The Numbers Shark",
-    color: "#f5c453",
-  },
-  {
-    id: "vera",
-    displayName: "Vera",
-    fullName: "Vera The Brand Guru",
-    persona: "The Brand Guru",
-    color: "#ff8bc2",
-  },
-  {
-    id: "wes",
-    displayName: "Wild Wes",
-    fullName: "Wild Wes The Wildcard",
-    persona: "The Wildcard",
-    color: "#86a5ff",
-  },
-];
+// Every episode is deterministic, so these assertions are exact: the same pitch
+// and seed always produce the same lines, offers, and verdict.
 
-function buildSse(events) {
-  return `${events
-    .map(({ event, data }) => `event: ${event}\ndata: ${JSON.stringify(data)}\n`)
-    .join("\n")}\n`;
+const FAST = "speed=40";
+
+async function rollCameras(page) {
+  await page.getByRole("button", { name: "Roll the cameras" }).click();
+  await expect(page.locator("body")).toHaveAttribute("data-view", "show");
 }
 
-async function mockApi(page) {
-  await page.route("**/api/config", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        runtime: "demo",
-        ttsEnabled: false,
-        sharks: SHARKS,
-        maxEpisodeCount: 3,
-      }),
-    });
-  });
-
-  await page.route("**/api/speech", async (route) => {
-    await route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({
-        detail: "Text-to-speech is unavailable in the Playwright harness.",
-      }),
-    });
-  });
-
-  await page.route("**/api/feasibility-report", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        source: "heuristic",
-        startupName: "Pitch Engine Labs",
-        report: {
-          feasibilityPercent: 64,
-          isGoodBusiness: "yes",
-          minimumInitialInvestmentUsd: 95000,
-          difficulty: "medium",
-          summary: "This pitch has a plausible business path, but it needs sharp execution.",
-          biggestRisk: "Customer demand may not hold once the spectacle wears off.",
-        },
-        download: {
-          fileName: "pitch-engine-labs-feasibility-report.txt",
-          mimeType: "text/plain; charset=utf-8",
-          content: "AI Shark Tank Feasibility Report",
-        },
-      }),
-    });
-  });
-
-  await page.route("**/api/live-episode", async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-      body: buildSse([
-        {
-          event: "ready",
-          data: { ok: true },
-        },
-        {
-          event: "stage",
-          data: {
-            runtime: "demo",
-            entranceDurationMs: 600,
-            founderLook: {
-              top: { type: "blazer", color: "midnight_navy", hex: "#24324f" },
-              bottom: { type: "tailored_trousers", color: "sand", hex: "#bca486" },
-            },
-            sharks: SHARKS,
-          },
-        },
-        {
-          event: "speaker_start",
-          data: {
-            speakerId: "entrepreneur",
-            displayName: "Entrepreneur",
-            role: "Founder",
-            badge: "PITCH",
-          },
-        },
-        {
-          event: "speaker_delta",
-          data: {
-            speakerId: "entrepreneur",
-            text: "Pitch Engine Labs turns startup ideas into live AI investor simulations and I am asking for $100,000 for 10%.",
-          },
-        },
-        {
-          event: "speaker_end",
-          data: {
-            speakerId: "entrepreneur",
-            displayName: "Entrepreneur",
-            role: "Founder",
-            badge: "PITCH",
-            text: "Pitch Engine Labs turns startup ideas into live AI investor simulations and I am asking for $100,000 for 10%.",
-          },
-        },
-        {
-          event: "speaker_start",
-          data: {
-            speakerId: "max",
-            displayName: "Max",
-            role: "The Numbers Shark",
-            badge: "LIVE",
-          },
-        },
-        {
-          event: "speaker_delta",
-          data: {
-            speakerId: "max",
-            text: "The margins are interesting, but I need to know customer acquisition cost.",
-          },
-        },
-        {
-          event: "speaker_end",
-          data: {
-            speakerId: "max",
-            displayName: "Max",
-            role: "The Numbers Shark",
-            badge: "INVEST",
-            decision: "INVEST",
-            offerSummary: "$100,000 for 10%",
-            text: "I can do $100,000 for 10% if you can prove the business scales.",
-          },
-        },
-        {
-          event: "speaker_start",
-          data: {
-            speakerId: "entrepreneur",
-            displayName: "Entrepreneur",
-            role: "Founder",
-            badge: "COUNTER",
-          },
-        },
-        {
-          event: "speaker_delta",
-          data: {
-            speakerId: "entrepreneur",
-            text: "I will do it for $100,000, but I need to keep 92% because the content engine is the moat.",
-          },
-        },
-        {
-          event: "speaker_end",
-          data: {
-            speakerId: "entrepreneur",
-            displayName: "Entrepreneur",
-            role: "Founder",
-            badge: "COUNTER",
-            decision: "COUNTER",
-            offerSummary: "$100,000 for 8%",
-            text: "I will do it for $100,000, but I need to keep 92% because the content engine is the moat.",
-          },
-        },
-        {
-          event: "speaker_start",
-          data: {
-            speakerId: "max",
-            displayName: "Max",
-            role: "The Numbers Shark",
-            badge: "DEAL",
-          },
-        },
-        {
-          event: "speaker_delta",
-          data: {
-            speakerId: "max",
-            text: "Fine. I can do $100,000 for 8%. Let's close it.",
-          },
-        },
-        {
-          event: "speaker_end",
-          data: {
-            speakerId: "max",
-            displayName: "Max",
-            role: "The Numbers Shark",
-            badge: "DEAL",
-            decision: "INVEST",
-            offerSummary: "$100,000 for 8%",
-            text: "Fine. I can do $100,000 for 8%. Let's close it.",
-          },
-        },
-        {
-          event: "deal_outcome",
-          data: {
-            sharkId: "max",
-            sharkName: "Max The Numbers Shark",
-            founderMove: "COUNTER",
-            founderTermsSummary: "$100,000 for 8%",
-            finalDecision: "DEAL",
-            finalTermsSummary: "$100,000 for 8%",
-            handshakeReady: true,
-          },
-        },
-        {
-          event: "episode_end",
-          data: {
-            runtime: "demo",
-            handshakeReady: true,
-            dealSummary: {
-              outcome: "Deal",
-              investors: ["Max The Numbers Shark"],
-              finalTerms: "$100,000 for 8%",
-            },
-          },
-        },
-        {
-          event: "done",
-          data: { ok: true },
-        },
-      ]),
-    });
-  });
+async function waitForVerdict(page) {
+  const dialog = page.locator("dialog.verdict");
+  await expect(dialog).toBeVisible({ timeout: 40_000 });
+  return dialog;
 }
 
-test("landing page and generation flow", async ({ page }, testInfo) => {
-  await mockApi(page);
-  await page.goto("/");
+function boardRow(page, sharkId) {
+  return page.locator(`#board-panel .board-row[data-id="${sharkId}"]`);
+}
 
-  await expect(page.getByText("AI Shark Tank")).toBeVisible();
-  await expect(page.locator(".scene-root canvas")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Generate" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Download report" })).toBeDisabled();
-  await expect(page.getByText(/Voice off|Voice unavailable/)).toBeVisible();
-  await expect(page.locator("#tts-toggle")).toBeDisabled();
-  await expect(page.locator(".shark-tag")).toHaveCount(5);
+test.describe("lobby", () => {
+  test("shows the lineup, the sharks, and a live stage preview", async ({ page }, testInfo) => {
+    await page.goto("/");
 
-  await page.screenshot({
-    path: testInfo.outputPath("landing-page.png"),
-    fullPage: false,
+    await expect(page.getByRole("heading", { name: "Pick a founder" })).toBeVisible();
+    await expect(page.locator(".pitch-card")).toHaveCount(6);
+    await expect(page.locator('.pitch-card[aria-checked="true"]')).toContainText("Barklight Labs");
+    await expect(page.locator("#hero-title")).toHaveText("Barklight Labs");
+    await expect(page.locator(".meet-card")).toHaveCount(5);
+    await expect(page.locator(".scene .seat")).toHaveCount(5);
+    await expect(page.locator(".scene .founder")).toHaveAttribute("data-position", "mark");
+    await expect(page.locator("#provider-label")).toHaveText("Scripted engine · no API keys");
+
+    await page.getByRole("radio", { name: /TideTrack/ }).click();
+    await expect(page.locator("#hero-title")).toHaveText("TideTrack");
+    await expect(page.locator(".hologram-name")).toHaveText("TideTrack Buoys");
+    await expect(page.locator("#hero-chips")).toContainText("$1M for 10%");
+
+    await page.screenshot({ path: testInfo.outputPath("lobby.png") });
   });
 
-  await page.getByRole("button", { name: "Generate" }).click();
+  test("validates the seed before calling the studio", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("#seed-input").fill("0");
+    await page.getByRole("button", { name: "Roll the cameras" }).click();
 
-  await expect(page.locator("#founder-bubble")).toBeVisible();
-  await expect(page.locator("#moment-banner")).toContainText("Founder counters");
-  await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
-  await expect(page.locator("#deal-stamp")).toContainText("$100,000");
-  await expect(page.locator(".actor-tag")).toHaveCount(6);
-
-  await page.screenshot({
-    path: testInfo.outputPath("episode-generated.png"),
-    fullPage: false,
+    await expect(page.locator("#lobby-error")).toHaveText(/Seed must be a whole number/);
+    await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
   });
 });
 
-test("deal state stays visible at the end", async ({ page }) => {
-  await mockApi(page);
-  await page.goto("/");
+test.describe("full episode", () => {
+  test("Barklight seed 1 plays from pitch to a deal with Wild Wes", async ({ page }, testInfo) => {
+    await page.goto(`/?${FAST}`);
+    await rollCameras(page);
 
-  await page.getByRole("button", { name: "Generate" }).click();
+    await expect(page).toHaveURL(/pitch=barklight&seed=1/);
+    await expect(page.locator(".caption-name")).toBeVisible();
+    await expect(page.locator(".phase-rail .phase")).toHaveCount(6);
 
-  await expect(page.locator("#founder-bubble")).toBeVisible();
-  await expect(page.locator("#moment-banner")).toContainText("Founder counters");
-  await expect(page.locator("#status-copy")).toBeHidden();
-  await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
-  await expect(page.locator("#deal-stamp")).toContainText("Pitch Engine Labs");
-  await expect(page.locator("#deal-stamp")).toContainText("Max");
+    const dialog = await waitForVerdict(page);
+    await page.screenshot({ path: testInfo.outputPath("barklight-verdict.png") });
+
+    await expect(dialog.locator("h2")).toHaveText("Wild Wes invests in Barklight Labs");
+    await expect(dialog.locator(".verdict-amount")).toHaveText("$500,000 for 9.5%");
+    await expect(dialog.locator(".verdict-delta")).toHaveText("16% below the asking valuation.");
+    await expect(dialog.locator(".ring-number")).toHaveText("44");
+    await expect(dialog.locator(".verdict-sharks li")).toHaveCount(5);
+
+    await dialog.getByRole("button", { name: "Close verdict" }).click();
+    await expect(boardRow(page, "rex")).toHaveAttribute("data-status", "out");
+    await expect(boardRow(page, "luna")).toHaveAttribute("data-status", "declined");
+    await expect(boardRow(page, "max")).toHaveAttribute("data-status", "out");
+    await expect(boardRow(page, "vera")).toHaveAttribute("data-status", "out");
+    await expect(boardRow(page, "wes")).toHaveAttribute("data-status", "deal");
+    await expect(page.locator('.seat[data-id="wes"] .seat-badge')).toHaveText("Deal");
+    await expect(page.locator(".meter-caption")).toContainText("Deal values it at $5.26M");
+    await expect(page.locator("#progress-label")).toHaveText("Line 25 of 25");
+
+    await page.getByRole("tab", { name: "Transcript" }).click();
+    await expect(page.locator(".transcript-list .line")).toHaveCount(25);
+    await expect(page.locator(".transcript-list .line").last()).toContainText(
+      "Barklight Labs leaves the tank with $500,000 for 9.5% from Wild Wes.",
+    );
+  });
+
+  test("the verdict downloads a markdown feasibility report", async ({ page }) => {
+    await page.goto(`/?pitch=ledgerloop&seed=7&${FAST}&autoplay=1`);
+    const dialog = await waitForVerdict(page);
+
+    await expect(dialog.locator(".verdict-stamp")).toHaveText("Multi-shark deal");
+    await expect(dialog.locator("h2")).toHaveText("Max and Rex invest in LedgerLoop");
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      dialog.getByRole("button", { name: "Download report" }).click(),
+    ]);
+    const content = await readFile(await download.path(), "utf8");
+
+    expect(download.suggestedFilename()).toBe("ledgerloop-feasibility-report.md");
+    expect(content).toContain("# LedgerLoop: AI Shark Tank Feasibility Report");
+    expect(content).toContain("**Final terms:** $300,000 for 13.5%");
+    expect(content).toContain("## All-Time Shark Tank Stats");
+    await expect(page.locator("#toast")).toHaveText("Downloaded ledgerloop-feasibility-report.md");
+  });
+
+  test("Sproutsy seed 1 ends with every shark out", async ({ page }) => {
+    await page.goto(`/?pitch=sproutsy&seed=1&${FAST}&autoplay=1`);
+    const dialog = await waitForVerdict(page);
+
+    await expect(dialog.locator(".verdict-stamp")).toHaveText("No deal");
+    await expect(dialog.locator("h2")).toHaveText("Sproutsy leaves without a deal");
+    await expect(dialog.locator(".verdict-kicker")).toHaveText("Every shark went out.");
+    await expect(dialog.locator('.verdict-sharks li[data-status="out"]')).toHaveCount(5);
+    await expect(dialog.locator('.report-stats dd[data-good="no"]')).toHaveText("No");
+  });
+
+  test("a custom idea becomes a shareable episode", async ({ page }) => {
+    await page.goto(`/?${FAST}`);
+    await page.getByLabel("Or pitch your own idea").fill("a marketplace for renting wedding dresses");
+
+    await expect(page.locator('.pitch-card[aria-checked="true"]')).toHaveCount(0);
+    await expect(page.locator("#hero-title")).toHaveText("Your pitch");
+
+    await page.getByLabel("Or pitch your own idea").press("Enter");
+    await expect(page).toHaveURL(/idea=a\+marketplace\+for\+renting\+wedding\+dresses&seed=1/);
+
+    const dialog = await waitForVerdict(page);
+    await expect(dialog.locator("h2")).toHaveText("WeddingDress Works leaves without a deal");
+
+    await dialog.getByRole("button", { name: "New pitch" }).click();
+    await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
+    await expect(page).toHaveURL(/\/$/);
+  });
+});
+
+test.describe("playback controls", () => {
+  test("pause, next line, skip to verdict, and watch again", async ({ page }) => {
+    await page.goto("/?pitch=odd-sox&seed=1");
+    await rollCameras(page);
+
+    await page.keyboard.press("Space");
+    await expect(page.locator("body")).toHaveAttribute("data-playback", "paused");
+    const label = page.locator("#progress-label");
+    await expect(label).toHaveText("Line 0 of 26");
+
+    await page.getByRole("button", { name: "Next line" }).click();
+    await expect(label).toHaveText("Line 1 of 26");
+    await page.keyboard.press("ArrowRight");
+    await expect(label).toHaveText("Line 2 of 26");
+    await expect(page.locator(".caption-name")).toHaveText("Theo");
+
+    await page.getByRole("button", { name: "2×" }).click();
+    await expect(page.getByRole("button", { name: "2×" })).toHaveAttribute("aria-pressed", "true");
+
+    await page.getByRole("button", { name: "Skip to verdict" }).click();
+    const dialog = await waitForVerdict(page);
+    await expect(dialog.locator("h2")).toHaveText("Vera invests in Odd Sox Club");
+
+    await dialog.getByRole("button", { name: "Watch again" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("body")).toHaveAttribute("data-playback", "playing");
+    await expect(boardRow(page, "vera")).toHaveAttribute("data-status", /waiting|thinking/);
+  });
+
+  test("voices read each line through the browser's speech synthesis", async ({ page }) => {
+    // Silent, deterministic stand-in for window.speechSynthesis.
+    await page.addInitScript(() => {
+      window.__spoken = [];
+      window.SpeechSynthesisUtterance = class {
+        constructor(text) {
+          this.text = text;
+        }
+      };
+      Object.defineProperty(window, "speechSynthesis", {
+        configurable: true,
+        value: {
+          getVoices: () => [{ name: "Test Voice", lang: "en-US" }],
+          addEventListener() {},
+          speak(utterance) {
+            window.__spoken.push(utterance.text);
+            setTimeout(() => utterance.onend?.(), 20);
+          },
+          cancel() {},
+          pause() {},
+          resume() {},
+        },
+      });
+    });
+
+    await page.goto(`/?pitch=tidetrack&seed=1&${FAST}`);
+    await rollCameras(page);
+    await page.getByRole("button", { name: "Turn voices on" }).click();
+    await expect(page.locator("#toast")).toHaveText(/Voices on/);
+
+    await waitForVerdict(page);
+    const spoken = await page.evaluate(() => window.__spoken);
+    expect(spoken.length).toBeGreaterThan(10);
+    expect(spoken.at(-1)).toBe(
+      "TideTrack leaves the tank with $1 million for 16% from Luna. That values the company at $6.25 million, 38% under the ask.",
+    );
+  });
+
+  test("the lobby button leaves the show", async ({ page }) => {
+    await page.goto("/?pitch=tidetrack&seed=1");
+    await rollCameras(page);
+    await page.getByRole("button", { name: "Lobby" }).click();
+
+    await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
+    await expect(page.locator('.pitch-card[aria-checked="true"]')).toContainText("TideTrack");
+  });
+});
+
+test.describe("responsive", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("works on a phone without horizontal scrolling", async ({ page }, testInfo) => {
+    await page.goto(`/?pitch=dumpling-dynasty&seed=2&${FAST}`);
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    await page.screenshot({ path: testInfo.outputPath("phone-lobby.png"), fullPage: true });
+
+    await page.getByRole("button", { name: "Roll the cameras" }).tap();
+    const dialog = await waitForVerdict(page);
+    await expect(dialog.locator("h2")).toHaveText("Wild Wes and Vera invest in Dumpling Dynasty");
+
+    const showOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(showOverflow).toBeLessThanOrEqual(0);
+    await page.screenshot({ path: testInfo.outputPath("phone-verdict.png") });
+  });
 });
