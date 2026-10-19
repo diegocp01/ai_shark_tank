@@ -1,246 +1,182 @@
-import dotenv from "dotenv";
 import express from "express";
 import path from "path";
-import crypto from "crypto";
 import { fileURLToPath } from "url";
 
-import { formatAllTimeStatsForReport, readAllTimeStats } from "./src/lib/allTimeStatsStore.js";
 import {
-  generateEpisodes,
-  generateFeasibilityReport,
-  streamLiveEpisode,
-} from "./src/lib/sharkTankEngine.js";
-import { getSharkProfileById, SHARK_PROFILES } from "./src/lib/sharkProfiles.js";
+  buildArchiveEpisode,
+  formatAllTimeStatsForReport,
+  readAllTimeStats,
+  recordEpisodeRun,
+  summarizeAllTimeStats,
+} from "./src/lib/allTimeStatsStore.js";
+import { buildFeasibilityMarkdown, buildFeasibilityReport, buildReportFileName } from "./src/lib/feasibility.js";
+import { createIdeaPitch, IDEA_MAX_LENGTH } from "./src/lib/ideaPitch.js";
+import { CATEGORY_LABELS, PRESET_PITCHES } from "./src/lib/pitchCatalog.js";
+import { describeProvider, getEpisodeProvider } from "./src/lib/providers/index.js";
+import { DEFAULT_SEED, MAX_SEED, normalizeSeed, PHASES } from "./src/lib/scriptedEngine.js";
+import { SHARK_PROFILES, toPublicShark } from "./src/lib/sharkProfiles.js";
+import { impliedValuation } from "./src/shared/format.js";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const MARKDOWN_MIME = "text/markdown; charset=utf-8";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const SPEECH_CACHE = new Map();
-const DEFAULT_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
-const FOUNDER_VOICE = {
-  voice: "coral",
-  instructions:
-    "Speak like an ambitious startup founder pitching investors on live television. Energetic, persuasive, confident, and clear.",
-};
+class RequestError extends Error {}
 
-function buildSpeechCacheKey(payload) {
-  return crypto.createHash("sha1").update(JSON.stringify(payload)).digest("hex");
-}
+function readEpisodeRequest(body = {}) {
+  const pitchId = typeof body.pitchId === "string" ? body.pitchId.trim() : "";
+  const idea = typeof body.idea === "string" ? body.idea.trim() : "";
 
-function rememberSpeech(key, value) {
-  SPEECH_CACHE.set(key, value);
+  if (!pitchId && !idea) {
+    throw new RequestError("Send a pitchId or an idea.");
+  }
 
-  if (SPEECH_CACHE.size > 100) {
-    const oldestKey = SPEECH_CACHE.keys().next().value;
-    SPEECH_CACHE.delete(oldestKey);
+  if (idea.length > IDEA_MAX_LENGTH * 2) {
+    throw new RequestError(`Keep the idea under ${IDEA_MAX_LENGTH} characters.`);
+  }
+
+  try {
+    return { pitchId, idea, seed: normalizeSeed(body.seed) };
+  } catch (error) {
+    throw new RequestError(error.message);
   }
 }
 
-function getSpeechProfile(speakerId) {
-  if (speakerId === "entrepreneur") {
-    return FOUNDER_VOICE;
-  }
-
-  const shark = getSharkProfileById(speakerId);
-
-  if (!shark) {
-    return null;
-  }
-
+function summarizePitch(pitch) {
   return {
-    voice: shark.voice,
-    instructions: shark.speechInstructions,
+    id: pitch.id,
+    startupName: pitch.startupName,
+    productName: pitch.productName,
+    tagline: pitch.tagline,
+    category: pitch.category,
+    categoryLabel: CATEGORY_LABELS[pitch.category],
+    icon: pitch.icon,
+    askUsd: pitch.askUsd,
+    equityPct: pitch.equityPct,
+    valuationUsd: impliedValuation(pitch.askUsd, pitch.equityPct),
+    founder: { name: pitch.founder.name, suit: pitch.founder.suit, accent: pitch.founder.accent },
   };
 }
 
-function sendSseEvent(res, event, payload) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+async function recordEpisode(episode) {
+  try {
+    return await recordEpisodeRun({
+      source: episode.provider,
+      mode: "live",
+      theme: episode.pitch.custom ? episode.pitch.idea : episode.pitch.id,
+      episodes: [buildArchiveEpisode(episode)],
+    });
+  } catch (error) {
+    console.error("Failed to record episode stats.", error);
+    return null;
+  }
+}
+
+function sendError(res, error, fallbackMessage) {
+  if (error instanceof RequestError) {
+    return res.status(400).json({ detail: error.message });
+  }
+
+  if (error instanceof Error && /^(Unknown pitch|Describe a startup idea|Pick a pitch)/.test(error.message)) {
+    return res.status(400).json({ detail: error.message });
+  }
+
+  console.error(error);
+  return res.status(500).json({ detail: fallbackMessage });
 }
 
 export function createApp() {
   const app = express();
+  const provider = getEpisodeProvider();
 
-  app.use(express.json({ limit: "1mb" }));
+  app.disable("x-powered-by");
+  app.use(express.json({ limit: "16kb" }));
   app.use(express.static(path.join(__dirname, "public")));
+  app.use("/shared", express.static(path.join(__dirname, "src", "shared")));
 
   app.get("/api/health", (_req, res) => {
-    res.json({
-      status: "ok",
-      runtime: process.env.OPENAI_API_KEY ? "agents" : "demo",
-    });
+    res.json({ status: "ok", provider: provider.id });
   });
 
   app.get("/api/config", (_req, res) => {
-    const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY?.trim());
-
     res.json({
-      runtime: hasOpenAIKey ? "agents" : "demo",
-      ttsEnabled: hasOpenAIKey,
-      sharks: SHARK_PROFILES,
-      maxEpisodeCount: 3,
+      provider: describeProvider(provider),
+      sharks: SHARK_PROFILES.map(toPublicShark),
+      pitches: PRESET_PITCHES.map(summarizePitch),
+      phases: PHASES,
+      defaults: { seed: DEFAULT_SEED },
+      limits: { ideaMaxLength: IDEA_MAX_LENGTH, maxSeed: MAX_SEED },
     });
   });
 
-  app.post("/api/generate-episodes", async (req, res) => {
+  app.post("/api/episodes", async (req, res) => {
     try {
-      const { count = 1, theme = "" } = req.body || {};
-      const payload = await generateEpisodes({ count, theme });
-      res.json(payload);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        detail:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while generating the AI Shark Tank episode.",
+      const request = readEpisodeRequest(req.body);
+      const episode = await provider.createEpisode(request);
+      const archive = await recordEpisode(episode);
+      const footer = archive ? formatAllTimeStatsForReport(archive) : "";
+
+      res.json({
+        episode,
+        allTime: archive ? summarizeAllTimeStats(archive) : null,
+        download: {
+          fileName: buildReportFileName(episode.pitch.startupName),
+          mimeType: MARKDOWN_MIME,
+          content: buildFeasibilityMarkdown(episode.pitch, episode.report, { episode, footer }),
+        },
       });
+    } catch (error) {
+      sendError(res, error, "Something went wrong while producing the episode.");
     }
   });
 
+  // Standalone report for any pitch text, kept for API clients. Uses the same
+  // deterministic scoring as the episode engine.
   app.post("/api/feasibility-report", async (req, res) => {
     try {
-      const payload = await generateFeasibilityReport(req.body || {});
-      const archive = await readAllTimeStats();
-      const reportFooter = formatAllTimeStatsForReport(archive);
+      const body = req.body || {};
+      const text = [body.founderPitch, body.pitchText, body.concept].find(
+        (value) => typeof value === "string" && value.trim(),
+      );
 
-      payload.download.content = `${payload.download.content}\n\n${reportFooter}`;
-      res.json(payload);
-    } catch (error) {
-      console.error(error);
-      res.status(400).json({
-        detail:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while generating the feasibility report.",
-      });
-    }
-  });
+      if (!text) {
+        throw new RequestError("A founderPitch, pitchText, or concept is required to generate a report.");
+      }
 
-  app.get("/api/live-episode", async (req, res) => {
-    const controller = new AbortController();
+      const pitch = createIdeaPitch(text, normalizeSeed(body.seed));
 
-    req.on("close", () => {
-      controller.abort();
-    });
+      if (typeof body.startupName === "string" && body.startupName.trim()) {
+        pitch.startupName = body.startupName.trim().slice(0, 80);
+      }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders?.();
+      if (typeof body.productName === "string" && body.productName.trim()) {
+        pitch.productName = body.productName.trim().slice(0, 80);
+      }
 
-    try {
-      sendSseEvent(res, "ready", {
-        ok: true,
-      });
+      const report = buildFeasibilityReport(pitch);
+      const archive = await readAllTimeStats().catch(() => null);
 
-      await streamLiveEpisode({
-        signal: controller.signal,
-        send: async (payload) => {
-          sendSseEvent(res, payload.type, payload);
+      res.json({
+        source: "heuristic",
+        startupName: pitch.startupName,
+        report,
+        download: {
+          fileName: buildReportFileName(pitch.startupName),
+          mimeType: MARKDOWN_MIME,
+          content: buildFeasibilityMarkdown(pitch, report, {
+            footer: archive ? formatAllTimeStatsForReport(archive) : "",
+          }),
         },
       });
-
-      sendSseEvent(res, "done", {
-        ok: true,
-      });
     } catch (error) {
-      if (controller.signal.aborted) {
-        res.end();
-        return;
-      }
-
-      console.error(error);
-      sendSseEvent(res, "stream_error", {
-        detail:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while streaming the live episode.",
-      });
-    } finally {
-      res.end();
+      sendError(res, error, "Something went wrong while generating the feasibility report.");
     }
   });
 
-  app.post("/api/speech", async (req, res) => {
-    try {
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(503).json({
-          detail: "Text-to-speech is unavailable until OPENAI_API_KEY is configured.",
-        });
-      }
-
-      const { speakerId, text } = req.body || {};
-      const cleanedText = typeof text === "string" ? text.trim() : "";
-      const profile = getSpeechProfile(speakerId);
-
-      if (!profile) {
-        return res.status(400).json({
-          detail: "Unknown speaker for text-to-speech.",
-        });
-      }
-
-      if (!cleanedText) {
-        return res.status(400).json({
-          detail: "Speech text is required.",
-        });
-      }
-
-      const payload = {
-        model: DEFAULT_TTS_MODEL,
-        voice: profile.voice,
-        input: cleanedText,
-        instructions: profile.instructions,
-        format: "wav",
-      };
-      const cacheKey = buildSpeechCacheKey(payload);
-      const cachedAudio = SPEECH_CACHE.get(cacheKey);
-
-      if (cachedAudio) {
-        res.setHeader("Content-Type", "audio/wav");
-        res.setHeader("Cache-Control", "private, max-age=3600");
-        return res.send(cachedAudio);
-      }
-
-      const response = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: payload.model,
-          voice: payload.voice,
-          input: payload.input,
-          instructions: payload.instructions,
-          response_format: payload.format,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenAI TTS failed: ${response.status} ${errorText}`);
-      }
-
-      const audioBuffer = Buffer.from(await response.arrayBuffer());
-      rememberSpeech(cacheKey, audioBuffer);
-
-      res.setHeader("Content-Type", "audio/wav");
-      res.setHeader("Cache-Control", "private, max-age=3600");
-      res.send(audioBuffer);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        detail:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while generating speech audio.",
-      });
-    }
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ detail: "Not found." });
   });
 
-  app.use((_req, res) => {
+  app.get(/.*/, (_req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
   });
 
@@ -249,9 +185,8 @@ export function createApp() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number.parseInt(process.env.PORT || "5050", 10);
-  const app = createApp();
 
-  app.listen(port, () => {
-    console.log(`AI Shark Tank server running at http://127.0.0.1:${port}`);
+  createApp().listen(port, () => {
+    console.log(`AI Shark Tank studio running at http://127.0.0.1:${port}`);
   });
 }

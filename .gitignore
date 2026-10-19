@@ -1,6 +1,11 @@
 .env
+.env.*
+!.env.example
 .venv
 __pycache__/
 *.pyc
 node_modules/
-npm-debug.log*.DS_Store
+npm-debug.log*
+.DS_Store
+test-results/
+playwright-report/
