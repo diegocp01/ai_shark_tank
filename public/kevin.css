@@ -1,0 +1,44 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #f2ece4; background: #111316; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.study { height: 100svh; min-height: 570px; overflow: hidden; position: relative; }
+#viewport { position: absolute; inset: 0; }
+#viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.study-header { position: absolute; inset: 30px 38px auto; display: flex; justify-content: space-between; align-items: flex-start; z-index: 1; pointer-events: none; }
+.back-link { color: #c8c6c4; text-transform: uppercase; letter-spacing: .15em; font-size: 11px; text-decoration: none; pointer-events: auto; }
+.back-link:hover { color: white; }
+.eyebrow { font-size: 10px; letter-spacing: .19em; text-transform: uppercase; margin: 34px 0 6px; color: #a4a09a; }
+h1 { font-family: Georgia, serif; font-weight: 400; letter-spacing: -.045em; font-size: clamp(40px, 5.5vw, 70px); margin: 0; line-height: 1.1; }
+.study-note { text-align: right; color: #b5b0a9; font-size: 11px; line-height: 1.8; margin: 0; }
+.study-note span { color: #71757d; }
+.model-caption { position: absolute; bottom: 155px; left: 38px; display: flex; gap: 13px; align-items: flex-start; pointer-events: none; }
+.caption-line { display: block; width: 30px; height: 1px; background: #bb8063; margin-top: 9px; }
+.model-caption p { font-size: 13px; margin: 0; line-height: 1.8; }
+.model-caption p span { font-size: 11px; color: #8e9299; }
+.study-controls { position: absolute; bottom: 0; width: 100%; padding: 24px 32px 20px; background: linear-gradient(transparent, #111316 35%); }
+.control-row { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
+.button-group { display: flex; border: 1px solid #34383d; border-radius: 7px; overflow: hidden; background: #171a20; }
+button { font: inherit; font-size: 11px; cursor: pointer; color: #acafb4; background: #171a20; border: 1px solid #34383d; padding: 10px 14px; border-radius: 7px; white-space: nowrap; }
+.button-group button { border: 0; border-radius: 0; }
+.button-group button + button { border-left: 1px solid #34383d; }
+button:hover { color: #fff; background: #292d33; }
+button[aria-pressed="true"] { background: #e7ded3; color: #222326; }
+button:focus-visible, a:focus-visible { outline: 2px solid #d1a17e; outline-offset: 3px; }
+button:disabled { cursor: wait; opacity: .4; }
+.help { text-align: center; color: #707780; font-size: 10px; margin: 15px 0 0; letter-spacing: .03em; }
+#model-info { display: block; margin-top: 6px; }
+.status-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; max-width: 85%; z-index: 2; }
+#status { color: #c0b7ad; font-size: 13px; }
+#status:empty { display: none; }
+body[data-state="error"] #status { padding: 18px; border: 1px solid #744a41; border-radius: 8px; background: #201a19; }
+.no-script { position: absolute; top: 50%; width: 100%; text-align: center; }
+@media (max-width: 650px) {
+  .study-header { inset: 22px 20px auto; }
+  .study-note { max-width: 145px; font-size: 10px; }
+  .eyebrow { margin-top: 24px; font-size: 8px; }
+  .model-caption { left: 20px; bottom: 180px; }
+  .study-controls { padding: 25px 12px 17px; }
+  .control-row { gap: 8px; }
+  button { padding: 10px 12px; font-size: 10px; }
+  .help { font-size: 9px; }
+}
