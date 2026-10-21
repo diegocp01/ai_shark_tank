@@ -21,6 +21,19 @@ npm start
 
 Open [http://127.0.0.1:5050](http://127.0.0.1:5050). No `.env` is needed.
 
+### Kevin character study
+
+Open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html)
+to review the Blender-authored Kevin O’Leary asset. The viewer includes portrait
+and full-figure framing, front/three-quarter/profile angles, orbit, zoom, and
+optional automatic rotation. It is an isolated asset study: **the five fictional
+episode characters, their animation system, and episode logic are unchanged.**
+
+The runtime asset lives at `public/models/kevin/kevin.glb`; the editable Blender
+source lives at `assets/kevin/kevin.blend`. This is a likeness-development pass,
+not a claim of a scan-quality digital double or an animation-ready replacement
+for the studio character rig.
+
 ## How it works
 
 <p align="center">
