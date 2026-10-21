@@ -6,6 +6,10 @@ import bpy, os, sys, math
 from pathlib import Path
 from mathutils import Vector
 ROOT=str(Path(__file__).resolve().parents[1])
+if '--rig' in sys.argv:
+ import runpy
+ runpy.run_path(ROOT+'/scripts/rig_kevin.py',run_name='__main__')
+ raise SystemExit(0)
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
 for material in list(bpy.data.materials):bpy.data.materials.remove(material)
 # Facial topology stays separately editable beneath non-destructive subdivision.
