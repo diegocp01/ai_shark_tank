@@ -140,6 +140,26 @@ export function outfitTexture(look, accent) {
       polygon(context, [[cx, 150], [cx + 16, 182], [cx - 16, 182]], accent);
       break;
     }
+    case "dress": {
+      // Solid dress with a soft V neckline and a fine gold chain.
+      polygon(context, [[cx - 82, 0], [cx + 82, 0], [cx, 210]], shadeHex(look.skin, -0.04));
+      context.strokeStyle = shadeHex(base, -0.25);
+      context.lineWidth = 6;
+      context.beginPath();
+      context.moveTo(cx - 82, 0);
+      context.lineTo(cx, 210);
+      context.lineTo(cx + 82, 0);
+      context.stroke();
+      context.strokeStyle = "#e8c15a";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(cx - 46, 0);
+      context.quadraticCurveTo(cx, 110, cx + 46, 0);
+      context.stroke();
+      context.fillStyle = "rgba(0,0,0,0.12)";
+      context.fillRect(0, 330, 1024, 14);
+      break;
+    }
     case "blazer":
       polygon(context, [[cx - 70, 0], [cx + 70, 0], [cx, 300]], "#e6ddd2");
       lapels(340);
@@ -167,8 +187,8 @@ export function outfitTexture(look, accent) {
       polygon(context, [[cx - 64, 0], [cx + 64, 0], [cx, 280]], "#dfe4ea");
       polygon(context, [[cx - 66, 0], [cx - 8, 0], [cx - 40, 70]], "#eceff3");
       polygon(context, [[cx + 66, 0], [cx + 8, 0], [cx + 40, 70]], "#eceff3");
-      polygon(context, [[cx - 15, 18], [cx + 15, 18], [cx + 11, 52], [cx - 11, 52]], shadeHex(accent, -0.25));
-      polygon(context, [[cx - 11, 52], [cx + 11, 52], [cx + 22, 250], [cx, 284], [cx - 22, 250]], accent);
+      polygon(context, [[cx - 15, 18], [cx + 15, 18], [cx + 11, 52], [cx - 11, 52]], shadeHex(look.tie || accent, -0.25));
+      polygon(context, [[cx - 11, 52], [cx + 11, 52], [cx + 22, 250], [cx, 284], [cx - 22, 250]], look.tie || accent);
       context.strokeStyle = "rgba(0,0,0,0.12)";
       context.lineWidth = 3;
 

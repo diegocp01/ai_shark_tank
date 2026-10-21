@@ -382,7 +382,7 @@ export function addStudioLights(scene, { quality = "high" } = {}) {
   const shadowSize = quality === "high" ? 2048 : 1024;
   scene.add(new THREE.HemisphereLight("#ffe1c2", "#120c0a", 0.22));
 
-  const panelKey = new THREE.SpotLight("#ffe0bd", 38, 18, 0.62, 0.7, 1.4);
+  const panelKey = new THREE.SpotLight("#ffe0bd", 30, 18, 0.62, 0.7, 1.4);
   panelKey.position.set(3.4, 6.2, 0.4);
   panelKey.target.position.set(0.6, 0.7, 0);
   panelKey.castShadow = true;

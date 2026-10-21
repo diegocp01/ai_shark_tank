@@ -8,7 +8,10 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { createCharacter } from "./character.js";
+import { hasRig } from "./skin.js";
 import { addStudioLights, createSet, FOUNDER_MARK, seatTransform } from "./set.js";
 
 const HALLWAY_ENTRY = new THREE.Vector3(11.2, 0, 0);
@@ -39,6 +42,25 @@ function fitFov(fov, aspect) {
   const horizontal = Math.atan(Math.tan(half) * wide);
   const fitted = 2 * Math.atan((Math.tan(horizontal) * 0.62) / aspect);
   return Math.min(70, Math.max(fov, THREE.MathUtils.radToDeg(fitted)));
+}
+
+// Rigged character models, loaded once. A missing or unrigged file just
+// leaves that shark on its procedural look.
+const modelCache = new Map();
+
+function loadRiggedModel(name) {
+  if (!modelCache.has(name)) {
+    const url = `/models/${name}/${name}-rigged.glb`;
+    modelCache.set(
+      name,
+      new GLTFLoader()
+        .loadAsync(url)
+        .then((gltf) => (hasRig(gltf.scene) ? gltf.scene : null))
+        .catch(() => null),
+    );
+  }
+
+  return modelCache.get(name);
 }
 
 function easeInOut(t) {
@@ -94,8 +116,9 @@ export function createStudio({ mount }) {
   mount.dataset.quality = quality;
   renderer.setPixelRatio(quality === "high" ? Math.min(window.devicePixelRatio || 1, 2) : 0.6);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;
+  // Neutral tone mapping keeps skin hue in bright key light (ACES bleaches it).
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 0.9;
   renderer.shadowMap.enabled = quality === "high";
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   mount.append(renderer.domElement);
@@ -410,6 +433,15 @@ export function createStudio({ mount }) {
         character.root.userData.seat = { position: position.clone(), yaw };
         scene.add(character.root);
         sharks.set(shark.id, character);
+
+        if (shark.look?.model) {
+          void loadRiggedModel(shark.look.model).then((model) => {
+            if (model && sharks.get(shark.id) === character) {
+              character.attachSkin(cloneSkinned(model));
+              mount.dataset[`${shark.id}Model`] = shark.look.model;
+            }
+          });
+        }
       });
     },
     setPitch(pitch) {
@@ -515,6 +547,8 @@ export function createStudio({ mount }) {
       if (character && sharkId !== handshakeId) {
         character.setPose(sharkPoseFor(sharkId));
       }
+
+      character?.setExpression(status === "out" ? "frown" : ["offer", "team", "countered", "deal"].includes(status) ? "smile" : null);
     },
     setShot,
     shotForBeat(beat) {

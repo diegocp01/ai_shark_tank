@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { createRetarget } from "./skin.js";
 import { outfitTexture, shadeHex } from "./textures.js";
 
 const HEAD_R = 0.122;
@@ -277,6 +278,35 @@ function curlCluster(head, material, { shell = 1.16, count = 52, minRadius = 0.0
 
 function buildHair(head, look, material) {
   switch (look.hairStyle) {
+    case "bald":
+      // A close-cropped band around the back and sides; bare crown.
+      addMesh(head, sculptedGeometry({ from: -0.055, to: 0.045, grow: 1.022, phiStart: Math.PI / 2 - 0.55, phiLength: Math.PI + 1.1 }), material, {
+        scale: [HEAD_WIDTH, 1, HEAD_DEPTH],
+      });
+      break;
+    case "shaved":
+      hairCap(head, material, { grow: 1.012, front: 0.09, side: 0.03, back: -0.05 });
+      break;
+    case "feathered": {
+      // Short, full, layered: lots of crown volume with flicked-out sides.
+      hairCap(head, material, { grow: 1.13, front: 0.07, side: -0.01, back: -0.07 });
+      addMesh(head, new THREE.SphereGeometry(0.1, 28, 20), material, { position: [0, 0.1, -0.012], scale: [1.12, 0.62, 1.1] });
+
+      for (const side of [1, -1]) {
+        addMesh(head, new THREE.SphereGeometry(0.05, 20, 14), material, {
+          position: [side * 0.098, -0.03, -0.01],
+          rotation: [0, 0, side * -0.5],
+          scale: [0.7, 1.15, 1.25],
+        });
+      }
+
+      addMesh(head, new THREE.SphereGeometry(0.07, 24, 16), material, {
+        position: [0.03, 0.09, 0.07],
+        rotation: [0.6, 0, -0.42],
+        scale: [1.4, 0.42, 0.85],
+      });
+      break;
+    }
     case "sidepart":
       hairCap(head, material, { grow: 1.08, front: 0.08, side: 0.016, back: -0.07 });
       addMesh(head, new THREE.SphereGeometry(0.072, 24, 16), material, {
@@ -509,9 +539,10 @@ function buildFace(head, look, materials) {
 
   if (look.glasses) {
     for (const side of [1, -1]) {
-      addMesh(head, new THREE.TorusGeometry(0.026, 0.0034, 8, 32), materials.frame, {
+      const round = look.glasses === "round";
+      addMesh(head, new THREE.TorusGeometry(round ? 0.025 : 0.026, round ? 0.0042 : 0.0034, 8, 32), materials.frame, {
         position: [side * 0.04, 0.013, faceZ(0.013, side * 0.04) + 0.012],
-        scale: [1.18, 0.86, 1],
+        scale: round ? [1.04, 0.98, 1] : [1.18, 0.86, 1],
         shadow: false,
       });
       addMesh(head, new THREE.BoxGeometry(0.004, 0.004, 0.1), materials.frame, {
@@ -618,7 +649,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     ...rawLook,
   };
   const random = seededRandom(seed * 977 + 13);
-  const dress = look.top === "blazer";
+  const dress = look.top === "blazer" || look.top === "dress";
   const materials = {
     skin: standard(look.skin, 0.6, { emissive: shadeHex(look.skin, -0.55), emissiveIntensity: 0.06 }),
     skinShade: standard(shadeHex(look.skin, -0.08), 0.6),
@@ -642,10 +673,10 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     shades: new THREE.MeshStandardMaterial({ color: "#14254d", metalness: 0.4, roughness: 0.12 }),
     jacket: new THREE.MeshStandardMaterial({ map: outfitTexture(look, color), roughness: 0.78 }),
     sleeve: standard(look.suit, 0.8),
-    cuff: standard(look.top === "turtleneck" ? look.suit : "#e9ecf0", 0.7),
+    cuff: standard(look.top === "turtleneck" || look.top === "dress" ? look.suit : "#e9ecf0", 0.7),
     collar: standard(look.top === "turtleneck" ? shadeHex(look.suit, 0.12) : "#f1f3f6", 0.65),
-    trousers: standard(dress ? look.suit : shadeHex(look.suit, -0.28), 0.82),
-    shin: standard(dress ? look.skin : shadeHex(look.suit, -0.32), dress ? 0.58 : 0.82),
+    trousers: standard(dress ? look.suit : look.trousers || shadeHex(look.suit, -0.28), 0.82),
+    shin: standard(dress ? look.skin : look.trousers ? shadeHex(look.trousers, -0.06) : shadeHex(look.suit, -0.32), dress ? 0.58 : 0.82),
     shoe: standard(dress ? shadeHex(look.suit, -0.35) : "#1c130e", 0.28),
     sole: standard("#0c0908", 0.6),
     heel: dress,
@@ -668,16 +699,16 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       rotation: [Math.PI / 2, 0, 0],
       scale: [1.1, 1, 1.5],
     });
-  } else if (look.top !== "open-collar") {
+  } else if (look.top !== "open-collar" && look.top !== "dress") {
     addMesh(spine, new THREE.CylinderGeometry(0.052, 0.066, 0.06, 24, 1, true), materials.collar, { position: [0, 0.5, 0.004] });
   }
 
   const neck = group(spine, [0, 0.47, 0]);
   addMesh(neck, new THREE.CylinderGeometry(0.047, 0.054, 0.12, 20), materials.skinShade, { position: [0, 0.05, 0.004] });
   const head = group(neck, [0, 0.19, 0.014]);
-  head.scale.setScalar(1.12);
+  head.scale.setScalar(1.02);
   const face = buildFace(head, look, materials);
-  buildHair(head, look, materials.hair);
+  buildHair(head, look, look.hairStyle === "shaved" ? materials.stubble : materials.hair);
 
   const limbs = {};
 
@@ -695,6 +726,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
   }
 
   const joints = { spine, neck, ...limbs };
+  let skin = null;
   const current = {};
   let target = POSES[pose];
 
@@ -749,6 +781,24 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     },
     setLookTarget(vector) {
       state.lookTarget = vector ? vector.clone() : null;
+    },
+    setExpression(name) {
+      skin?.setExpression(name);
+    },
+    // Swap the procedural body for a rigged model driven by the same joints.
+    attachSkin(model) {
+      root.updateMatrixWorld(true);
+      const procedural = [];
+      root.traverse((node) => node.isMesh && procedural.push(node));
+      // Bind with the joints at rest so the model's rest pose lines up.
+      const saved = Object.entries({ pelvis, head, ...joints }).map(([name, node]) => [node, node.rotation.clone()]);
+      saved.forEach(([node]) => node.rotation.set(0, 0, 0));
+      root.add(model);
+      skin = createRetarget(model, { root, joints: { pelvis, head, ...joints } });
+      saved.forEach(([node, rotation]) => node.rotation.copy(rotation));
+      procedural.forEach((mesh) => {
+        mesh.visible = false;
+      });
     },
     headPosition(out = new THREE.Vector3()) {
       return head.getWorldPosition(out);
@@ -866,6 +916,8 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       for (const brow of face.brows) {
         brow.position.y = brow.userData.baseY + talking * 0.0028 * Math.max(0, Math.sin(t * 4.1)) + think * 0.004;
       }
+
+      skin?.update({ time: t, dt, speaking: state.speaking, blinking: time < state.blinkUntil, procPelvisY: pelvis.position.y });
     },
   };
 }
