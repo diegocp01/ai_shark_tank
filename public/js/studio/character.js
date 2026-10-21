@@ -794,7 +794,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       const saved = Object.entries({ pelvis, head, ...joints }).map(([name, node]) => [node, node.rotation.clone()]);
       saved.forEach(([node]) => node.rotation.set(0, 0, 0));
       root.add(model);
-      skin = createRetarget(model, { root, joints: { pelvis, head, ...joints } });
+      skin = createRetarget(model, { root, joints: { pelvis, head, ...joints }, skinTone: look.skin });
       saved.forEach(([node, rotation]) => node.rotation.copy(rotation));
       procedural.forEach((mesh) => {
         mesh.visible = false;

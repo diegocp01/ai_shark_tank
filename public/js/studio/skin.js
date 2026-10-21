@@ -63,7 +63,40 @@ export function hasRig(model) {
   return Boolean(findBone(model, "pelvis") && findBone(model, "head") && findBone(model, "upperarm.L"));
 }
 
-export function createRetarget(model, { root, joints }) {
+// Scale skin to the studio's tone, keeping the model's painted variation.
+function matchSkinTone(model, tone) {
+  const target = new THREE.Color(tone);
+
+  model.traverse((node) => {
+    // Skin meshes are named "...Skin_|_<tone>" (hands) or "..._anatomical_head" (face);
+    // every skinned part is prefixed "Kevin_skin_", so match case-sensitively.
+    if (!node.isMesh || !/Skin_\|_|anatomical_head/.test(node.name)) {
+      return;
+    }
+
+    const colors = node.geometry.attributes.color;
+
+    if (colors && node.material.vertexColors) {
+      const average = new THREE.Color(0, 0, 0);
+
+      for (let index = 0; index < colors.count; index += 1) {
+        average.r += colors.getX(index) / colors.count;
+        average.g += colors.getY(index) / colors.count;
+        average.b += colors.getZ(index) / colors.count;
+      }
+
+      node.material.color.setRGB(target.r / average.r, target.g / average.g, target.b / average.b);
+    } else {
+      node.material.color.copy(target);
+    }
+  });
+}
+
+export function createRetarget(model, { root, joints, skinTone = null }) {
+  if (skinTone) {
+    matchSkinTone(model, skinTone);
+  }
+
   const rootInverse = new THREE.Quaternion();
   const scratch = new THREE.Quaternion();
   const bones = [];
@@ -159,7 +192,7 @@ export function createRetarget(model, { root, joints }) {
         desired.set(entry.bone, world);
         const parent = entry.bone.parent;
         const parentWorld = desired.get(parent) || rootInverse.clone().multiply(parent.getWorldQuaternion(new THREE.Quaternion()));
-        entry.bone.quaternion.copy(parentWorld.invert().multiply(world));
+        entry.bone.quaternion.copy(parentWorld.clone().invert().multiply(world));
       }
 
       if (pelvis) {

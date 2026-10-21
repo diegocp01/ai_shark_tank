@@ -434,7 +434,8 @@ export function createStudio({ mount }) {
         scene.add(character.root);
         sharks.set(shark.id, character);
 
-        if (shark.look?.model) {
+        // Rigged models are heavy (hundreds of thousands of triangles); light mode keeps the procedural look.
+        if (shark.look?.model && quality === "high") {
           void loadRiggedModel(shark.look.model).then((model) => {
             if (model && sharks.get(shark.id) === character) {
               character.attachSkin(cloneSkinned(model));

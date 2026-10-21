@@ -37,6 +37,14 @@ test.describe("title screen", () => {
     await page.screenshot({ path: testInfo.outputPath("title.png") });
   });
 
+  test("seats the rigged Kevin model in the Skeptic's chair", async ({ page }) => {
+    // Full quality loads rigged models; software WebGL is slow, so allow extra time.
+    test.setTimeout(150_000);
+    await page.goto("/?quality=high");
+    await expect(page.locator(".stage")).toHaveAttribute("data-quality", "high");
+    await expect(page.locator(".stage")).toHaveAttribute("data-rex-model", "kevin", { timeout: 120_000 });
+  });
+
   test("validates the seed before rolling", async ({ page }) => {
     await page.goto("/");
     await page.locator("#seed-input").fill("0");
