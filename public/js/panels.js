@@ -45,7 +45,7 @@ export function personFor(speakerId, episode) {
   }
 
   if (speakerId === "founder") {
-    return { id: "founder", color: episode.pitch.founder.accent, accent: episode.pitch.founder.accent };
+    return { ...episode.pitch.founder, id: "founder", color: episode.pitch.founder.accent };
   }
 
   return episode.sharks.find((shark) => shark.id === speakerId);

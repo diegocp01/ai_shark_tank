@@ -53,7 +53,7 @@ function summarizePitch(pitch) {
     askUsd: pitch.askUsd,
     equityPct: pitch.equityPct,
     valuationUsd: impliedValuation(pitch.askUsd, pitch.equityPct),
-    founder: { name: pitch.founder.name, suit: pitch.founder.suit, accent: pitch.founder.accent },
+    founder: { ...pitch.founder },
   };
 }
 

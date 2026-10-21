@@ -1,10 +1,10 @@
 # AI Shark Tank
 
 <p align="center">
-  <img src="static/image.png" alt="AI Shark Tank: Wild Wes closes a deal with the founder of Barklight Labs" width="900" />
+  <img src="static/image.png" alt="AI Shark Tank: Wild Wes accepts the founder's counter-offer for Barklight Labs" width="900" />
 </p>
 
-`AI Shark Tank` is a browser-based Shark Tank simulator: five AI shark personas, one AI founder, and every question, offer, counter, and handshake played out on a broadcast-style stage. It's built for screenshots, short videos, and social-ready demos.
+`AI Shark Tank` is a browser-based Shark Tank simulator: five illustrated AI shark personas, one AI founder, and every question, offer, counter, and handshake played out on a broadcast-style stage. It's built for screenshots, short videos, and social-ready demos.
 
 Right now every episode comes from a **deterministic scripted engine**. There are no API keys and no model calls. The same pitch and seed always produce the same episode, so you can test, record, and share exact takes. A live model provider can plug in later without touching the UI (see [Connecting a live model later](#connecting-a-live-model-later)).
 
@@ -107,7 +107,7 @@ public/styles.css              Broadcast-studio styling
 public/js/app.js               Lobby, show, and verdict controller
 public/js/director.js          Clock-driven playback engine (pure, unit-tested)
 public/js/stage.js             Studio set, camera, spotlight, seats, founder
-public/js/figures.js           SVG robot sharks and founder
+public/js/figures.js           SVG illustrated sharks and founders
 public/js/panels.js            Caption, deal board, transcript, verdict
 public/js/voice.js             Optional browser speech synthesis
 tests/node/                    Engine, reducer, director, and HTTP API tests

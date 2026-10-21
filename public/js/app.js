@@ -226,7 +226,7 @@ function previewSelection() {
       productName: "Your idea",
       icon: "sparkle",
       askLabel: "Ask TBD",
-      founder: { name: "You", suit: "#2a3550", accent: "#39e0c8" },
+      founder: { name: "You", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" },
     });
   } else {
     stage.setPitch(pitch);

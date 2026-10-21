@@ -91,6 +91,9 @@ const FOUNDER_NAMES = ["Avery", "Jordan", "Sam", "Riley", "Morgan", "Quinn", "Ro
 const FOUNDER_STYLES = ["stubborn", "balanced", "eager"];
 const FOUNDER_SUITS = ["#24324f", "#31564c", "#6b2c39", "#444a57", "#674366", "#2f4f86", "#56705a", "#5a4636"];
 const FOUNDER_ACCENTS = ["#7ce8c8", "#f5c453", "#ff8bc2", "#86a5ff", "#ff6b57"];
+const FOUNDER_SKINS = ["#f6d4bb", "#f1c6a5", "#e3aa83", "#c98e63", "#a8724c", "#8e5b3c", "#6f4631"];
+const FOUNDER_HAIR_COLORS = ["#1c1719", "#2a1e18", "#4a3324", "#6a4a33", "#9a4425", "#d9b56e"];
+const FOUNDER_HAIR_STYLES = ["short", "slick", "bun", "bob", "long-straight", "curly-short", "buzz"];
 
 export function normalizeIdea(idea) {
   return String(idea ?? "")
@@ -306,6 +309,10 @@ export function createIdeaPitch(rawIdea, seed = 1) {
       style: rng.pick(FOUNDER_STYLES),
       suit: rng.pick(FOUNDER_SUITS),
       accent: rng.pick(FOUNDER_ACCENTS),
+      // Drawn last so adding looks never shifts the business numbers above.
+      skin: rng.pick(FOUNDER_SKINS),
+      hair: rng.pick(FOUNDER_HAIR_COLORS),
+      hairStyle: rng.pick(FOUNDER_HAIR_STYLES),
     },
   };
 }
