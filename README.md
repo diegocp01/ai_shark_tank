@@ -1,7 +1,7 @@
 # AI Shark Tank
 
 <p align="center">
-  <img src="static/image.png" alt="AI Shark Tank: Wild Wes accepts the founder's counter-offer for Barklight Labs" width="900" />
+  <img src="static/image.png" alt="AI Shark Tank: the founder shakes on a deal with Wild Wes in front of the shark panel" width="900" />
 </p>
 
 `AI Shark Tank` is a browser-based Shark Tank simulator: five illustrated AI shark personas, one AI founder, and every question, offer, counter, and handshake played out on a broadcast-style stage. It's built for screenshots, short videos, and social-ready demos.
@@ -106,7 +106,7 @@ public/index.html              App shell
 public/styles.css              Broadcast-studio styling
 public/js/app.js               Lobby, show, and verdict controller
 public/js/director.js          Clock-driven playback engine (pure, unit-tested)
-public/js/stage.js             Studio set, camera, spotlight, seats, founder
+public/js/stage.js             Two camera setups (shark panel, pitch floor), cuts, spotlight
 public/js/figures.js           SVG illustrated sharks and founders
 public/js/panels.js            Caption, deal board, transcript, verdict
 public/js/voice.js             Optional browser speech synthesis

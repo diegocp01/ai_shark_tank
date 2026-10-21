@@ -250,29 +250,162 @@ function torsoMarkup(look, color) {
   }
 }
 
-export function sharkFigure(shark) {
-  const chairId = nextId("chair");
-  const look = { ...DEFAULT_LOOK, ...shark.look };
+const WALNUT = ["#7c4b2c", "#45271a"];
+const LEATHER = ["#f3ebde", "#d6c9b4"];
+
+function chairGradients(ids) {
+  return `
+    <linearGradient id="${ids.walnut}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${WALNUT[0]}"/><stop offset="1" stop-color="${WALNUT[1]}"/>
+    </linearGradient>
+    <linearGradient id="${ids.leather}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${LEATHER[0]}"/><stop offset="1" stop-color="${LEATHER[1]}"/>
+    </linearGradient>`;
+}
+
+// Upper body for a seated shark, in the 300x560 seated frame (center x=150).
+function seatedTorso(look, color) {
+  const suit = look.suit;
+  const skinShadow = shade(look.skin, -0.12);
+  const lapels = `<path d="M130 236 L150 296 L138 392 L104 392 C106 330 114 270 130 236 Z" fill="#000" opacity="0.2"/>
+    <path d="M170 236 L150 296 L162 392 L196 392 C194 330 186 270 170 236 Z" fill="#000" opacity="0.2"/>`;
+  const body = `<path d="M84 258 C88 242 108 234 132 232 L150 238 L168 232 C192 234 212 242 216 258 L224 394 L76 394 Z" fill="${suit}"/>
+    <path d="M84 258 C88 242 108 234 132 232 L138 234 C116 260 100 320 96 394 L76 394 Z" fill="#fff" opacity="0.06"/>`;
+  const neck = `<path d="M138 210 L138 248 Q150 256 162 248 L162 210 Z" fill="${skinShadow}"/>`;
+  const pin = `<path class="fin" d="M112 302 C116 291 122 285 130 283 C128 289 127 295 128 302 Z" fill="${color}"/>`;
+  const pocket = `<path d="M178 292 l18 -5 l2 10 l-18 3 z" fill="${color}" opacity="0.92"/>`;
+
+  switch (look.top) {
+    case "turtleneck":
+      return `${neck}${body}
+        <path d="M126 222 Q150 236 174 222 L178 254 Q150 268 122 254 Z" fill="${shade(suit, 0.12)}"/>
+        <g stroke="#000" stroke-opacity="0.14" stroke-width="1.4"><path d="M132 232 V258"/><path d="M141 236 V262"/><path d="M150 238 V264"/><path d="M159 236 V262"/><path d="M168 232 V258"/></g>
+        <path d="M134 266 Q150 300 166 266" fill="none" stroke="#e8c15a" stroke-width="2"/>
+        <path d="M150 292 l6 11 h-12 z" fill="${color}"/>`;
+    case "blazer":
+      return `${neck}${body}
+        <path d="M132 234 L150 302 L168 234 Q150 246 132 234 Z" fill="#f4ece4"/>
+        ${lapels}${pocket}${pin}`;
+    case "open-collar":
+      return `${neck}${body}
+        <path d="M130 232 L150 296 L170 232 Z" fill="#f3f5f8"/>
+        <path d="M138 234 L150 268 L162 234 Q150 242 138 234 Z" fill="${skinShadow}"/>
+        <path d="M130 232 L142 254 L134 264 Z M170 232 L158 254 L166 264 Z" fill="#ffffff"/>
+        <path d="M139 240 Q150 262 161 240" fill="none" stroke="#e8c15a" stroke-width="2"/>
+        ${lapels}${pin}`;
+    case "suit":
+    default:
+      return `${neck}${body}
+        <path d="M134 234 L150 292 L166 234 Q150 244 134 234 Z" fill="#eef1f5"/>
+        <path d="M132 232 L150 254 L141 264 Z M168 232 L150 254 L159 264 Z" fill="#ffffff"/>
+        <path d="M145 250 H155 L157 262 L153 340 L150 348 L147 340 L143 262 Z" fill="${color}"/>
+        <path d="M145 250 H155 L154 260 H146 Z" fill="${shade(color, -0.22)}"/>
+        ${lapels}
+        <circle cx="150" cy="364" r="3" fill="#000" opacity="0.35"/>
+        ${pocket}${pin}`;
+  }
+}
+
+function seatedLegs(look) {
+  const trousers = shade(look.suit, -0.25);
+
+  if (look.top === "blazer") {
+    // Vera wears a dress that matches her blazer.
+    return `
+      <path d="M80 384 L220 384 C228 410 228 432 218 448 L82 448 C72 432 72 410 80 384 Z" fill="${look.suit}"/>
+      <path d="M82 448 L218 448" stroke="#000" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M110 446 L134 446 L130 520 L114 520 Z" fill="${look.skin}"/>
+      <path d="M166 446 L190 446 L186 520 L170 520 Z" fill="${shade(look.skin, -0.06)}"/>
+      <path d="M108 516 h28 l2 12 h-32 z M164 516 h28 l2 12 h-32 z" fill="${shade(look.suit, -0.3)}"/>`;
+  }
 
   return `
-    <svg class="figure figure-shark" viewBox="0 0 200 300" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="${chairId}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#33231c"/>
-          <stop offset="1" stop-color="#110b09"/>
-        </linearGradient>
-      </defs>
+    <path d="M84 384 L216 384 C222 404 220 426 210 440 L90 440 C80 426 78 404 84 384 Z" fill="${trousers}"/>
+    <path d="M150 392 V438" stroke="#000" stroke-opacity="0.18" stroke-width="2"/>
+    <path d="M100 434 L138 434 L134 520 L106 520 Z" fill="${shade(trousers, -0.06)}"/>
+    <path d="M162 434 L200 434 L194 520 L166 520 Z" fill="${shade(trousers, -0.12)}"/>
+    <path d="M98 516 h42 a9 9 0 0 1 0 18 h-46 a7 9 0 0 1 4 -18 z M160 516 h42 a7 9 0 0 1 4 18 h-46 a9 9 0 0 1 0 -18 z" fill="#17110d"/>`;
+}
+
+// A shark seated in a cream-and-walnut lounge chair, facing the camera.
+export function sharkSeatedFigure(shark) {
+  const ids = { walnut: nextId("walnut"), leather: nextId("leather") };
+  const look = { ...DEFAULT_LOOK, ...shark.look };
+  const sleeve = shade(look.suit, -0.1);
+
+  return `
+    <svg class="figure figure-shark" viewBox="0 0 300 560" aria-hidden="true" focusable="false">
+      <defs>${chairGradients(ids)}</defs>
       <g class="chair">
-        <rect x="26" y="40" width="148" height="268" rx="44" fill="url(#${chairId})"/>
-        <rect x="26" y="40" width="148" height="268" rx="44" fill="none" stroke="${shark.color}" stroke-opacity="0.24" stroke-width="2"/>
-        <g fill="#000" opacity="0.28">
-          <circle cx="58" cy="78" r="3"/><circle cx="142" cy="78" r="3"/><circle cx="58" cy="130" r="3"/><circle cx="142" cy="130" r="3"/>
-        </g>
-        <path d="M56 50 Q100 36 144 50" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="3" stroke-linecap="round"/>
+        <path d="M150 456 V512" stroke="#24272d" stroke-width="12"/>
+        <path d="M150 510 L70 540 M150 510 L230 540 M150 510 L150 550" stroke="#3a3e46" stroke-width="9" stroke-linecap="round"/>
+        <rect x="56" y="94" width="188" height="324" rx="78" fill="url(#${ids.walnut})"/>
+        <rect x="72" y="110" width="156" height="300" rx="64" fill="url(#${ids.leather})"/>
+        <path d="M86 214 H214 M86 312 H214" stroke="#000" stroke-opacity="0.08" stroke-width="3"/>
+        <path d="M20 318 C20 304 32 296 48 296 L94 296 L94 354 L38 354 C28 354 20 346 20 336 Z" fill="url(#${ids.walnut})"/>
+        <rect x="22" y="288" width="74" height="22" rx="11" fill="url(#${ids.leather})"/>
+        <path d="M280 318 C280 304 268 296 252 296 L206 296 L206 354 L262 354 C272 354 280 346 280 336 Z" fill="url(#${ids.walnut})"/>
+        <rect x="204" y="288" width="74" height="22" rx="11" fill="url(#${ids.leather})"/>
+        <rect x="60" y="380" width="180" height="76" rx="30" fill="url(#${ids.leather})"/>
+        <rect x="56" y="432" width="188" height="30" rx="14" fill="url(#${ids.walnut})"/>
       </g>
-      <g class="torso">${torsoMarkup(look, shark.color)}</g>
-      <g transform="translate(100 174.6) scale(1.16) translate(-100 -160)">${headMarkup(look)}</g>
-      ${thoughtBubble()}
+      <g class="torso">
+        ${seatedTorso(look, shark.color)}
+        <path d="M88 256 C66 262 50 282 48 302 L76 310 C80 292 88 278 100 270 Z" fill="${sleeve}"/>
+        <path d="M212 256 C234 262 250 282 252 302 L224 310 C220 292 212 278 200 270 Z" fill="${sleeve}"/>
+        <ellipse cx="60" cy="306" rx="14" ry="9" fill="${look.skin}"/>
+        <ellipse cx="240" cy="306" rx="14" ry="9" fill="${shade(look.skin, -0.06)}"/>
+        ${seatedLegs(look)}
+      </g>
+      <g transform="translate(150 232) scale(1.32) translate(-100 -156)">${headMarkup(look)}</g>
+      <g transform="translate(36 40)">${thoughtBubble()}</g>
+    </svg>`;
+}
+
+const BACK_HAIR = {
+  short: `<path d="M80 88 C78 48 98 30 120 30 C142 30 162 48 160 88 C158 102 150 110 140 112 L100 112 C90 110 82 102 80 88 Z"/>`,
+  buzz: `<path d="M82 88 C80 50 98 34 120 34 C142 34 160 50 158 88 C156 100 148 108 140 110 L100 110 C92 108 84 100 82 88 Z" opacity="0.85"/>`,
+  bob: `<path d="M76 82 C74 44 96 28 120 28 C144 28 166 44 164 82 L166 120 C150 128 90 128 74 120 Z"/>`,
+  long: `<path d="M76 82 C74 44 96 28 120 28 C144 28 166 44 164 82 L172 178 C150 188 90 188 68 178 Z"/>`,
+  bun: `<path d="M80 88 C78 48 98 32 120 32 C142 32 162 48 160 88 C158 102 150 110 140 112 L100 112 C90 110 82 102 80 88 Z"/><circle cx="120" cy="44" r="17"/>`,
+  curly: curls([[90, 52, 22], [120, 40, 22], [150, 52, 22], [84, 80, 18], [156, 80, 18], [100, 96, 16], [140, 96, 16], [120, 70, 22]]),
+  "curly-short": curls([[96, 50, 16], [120, 42, 17], [144, 50, 16], [90, 76, 14], [150, 76, 14], [120, 84, 18]]),
+};
+
+const BACK_HAIR_FOR = {
+  sidepart: "short",
+  short: "short",
+  slick: "short",
+  buzz: "buzz",
+  bob: "bob",
+  "long-wavy": "long",
+  "long-straight": "long",
+  bun: "bun",
+  curly: "curly",
+  "curly-short": "curly-short",
+};
+
+// A shark seen from behind their chair, for the over-the-shoulder pitch shot.
+export function sharkBackFigure(shark) {
+  const ids = { walnut: nextId("walnut"), leather: nextId("leather") };
+  const look = { ...DEFAULT_LOOK, ...shark.look };
+  const hair = BACK_HAIR[BACK_HAIR_FOR[look.hairStyle] || "short"];
+
+  return `
+    <svg class="figure figure-back" viewBox="0 0 240 300" aria-hidden="true" focusable="false">
+      <defs>${chairGradients(ids)}</defs>
+      <path d="M30 300 C32 196 60 150 120 146 C180 150 208 196 210 300 Z" fill="${look.suit}"/>
+      <rect x="104" y="108" width="32" height="46" rx="12" fill="${shade(look.skin, -0.14)}"/>
+      <path d="M100 148 Q120 156 140 148 L138 160 Q120 166 102 160 Z" fill="${look.top === "turtleneck" ? shade(look.suit, 0.12) : "#eef1f5"}"/>
+      <g class="back-head">
+        <ellipse cx="82" cy="84" rx="7" ry="11" fill="${shade(look.skin, -0.1)}"/>
+        <ellipse cx="158" cy="84" rx="7" ry="11" fill="${shade(look.skin, -0.1)}"/>
+        <ellipse cx="120" cy="76" rx="38" ry="44" fill="${look.skin}"/>
+        <g fill="${look.hair}">${hair}</g>
+        ${look.glasses ? `<path d="M76 78 h8 M156 78 h8" stroke="#14161b" stroke-width="3" stroke-linecap="round"/>` : ""}
+      </g>
+      <path d="M22 300 L22 216 C22 172 60 152 120 152 C180 152 218 172 218 216 L218 300 Z" fill="url(#${ids.walnut})"/>
+      <path d="M40 196 C50 172 82 164 120 164 C158 164 190 172 200 196" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="4" stroke-linecap="round"/>
     </svg>`;
 }
 

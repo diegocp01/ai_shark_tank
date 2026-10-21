@@ -36,7 +36,7 @@ test.describe("lobby", () => {
 
     await page.getByRole("radio", { name: /TideTrack/ }).click();
     await expect(page.locator("#hero-title")).toHaveText("TideTrack");
-    await expect(page.locator(".hologram-name")).toHaveText("TideTrack Buoys");
+    await expect(page.locator(".board-product")).toHaveText("TideTrack Buoys");
     await expect(page.locator("#hero-chips")).toContainText("$1M for 10%");
 
     await page.screenshot({ path: testInfo.outputPath("lobby.png") });

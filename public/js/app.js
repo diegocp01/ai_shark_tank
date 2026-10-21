@@ -224,6 +224,8 @@ function previewSelection() {
   if (state.selection.idea || !pitch) {
     stage.setPitch({
       productName: "Your idea",
+      tagline: state.selection.idea || "Describe a startup and the sharks will take it from there.",
+      startupName: "Custom pitch",
       icon: "sparkle",
       askLabel: "Ask TBD",
       founder: { name: "You", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" },
@@ -391,9 +393,8 @@ function celebrateDeal(effect) {
     .concat(["#f6c55b", "#ffffff"]);
 
   showStamp("deal");
-  confetti.burst({ colors, seed: state.episode.seed, originX: 0.55 });
-  stage.walkTo("approach", 1400);
-  stage.celebrate(true);
+  confetti.burst({ colors, seed: state.episode.seed, originX: 0.5 });
+  stage.handshake(effect.sharkIds[0]);
 }
 
 function resetShowSurface() {
@@ -527,7 +528,6 @@ function buildDirector() {
         renderProgress(state.episode.beats.length - 1);
         renderPhaseRail(elements.phaseRail, state.episode.phases, "verdict");
         stage.setSpeaker(null);
-        stage.setShot("wide");
         verdictTimer = window.setTimeout(openVerdict, 900);
       },
     },
