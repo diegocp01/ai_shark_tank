@@ -37,6 +37,8 @@ Rex uses `public/models/kevin/kevin-rigged.glb` and Luna uses `public/models/lor
 
 To review the Kevin asset on its own, open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html) (portrait and full-figure framing, three angles, orbit, zoom). The editable Blender sources are `assets/kevin/kevin.blend` and `assets/kevin/kevin-rigged.blend`.
 
+Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara.html](http://127.0.0.1:5050/barbara.html), with portrait/full-figure views, orbit and four facial controls. It includes an editable [Blender source](assets/barbara/barbara.blend), a rigged GLB, and [build instructions and validation](docs/barbara/README.md).
+
 ## How it works
 
 <p align="center">

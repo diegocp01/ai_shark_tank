@@ -1,0 +1,12 @@
+{
+  "reimported_glb": true,
+  "bones": 18,
+  "morphs": [
+    "blink",
+    "frown",
+    "mouthOpen",
+    "smile"
+  ],
+  "head_turn_degrees_tested": 30,
+  "rig_children": 35
+}
