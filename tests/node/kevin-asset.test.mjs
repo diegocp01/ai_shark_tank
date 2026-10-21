@@ -18,13 +18,20 @@ test("Kevin GLB parses in the runtime loader with finite geometry and human-scal
   assert.ok(size.x > 0.2 && size.x < 1.5, `human width: ${size.x}`);
   assert.ok(size.z > 0.1 && size.z < 1, `human depth: ${size.z}`);
   let triangles = 0;
+  let hasComplexionColors = false;
   gltf.scene.traverse((node) => {
     if (!node.isMesh) return;
     const positions = node.geometry.attributes.position;
+    const colors = node.geometry.attributes.color;
+    if (colors) {
+      hasComplexionColors = true;
+      for (const value of colors.array) assert.ok(Number.isFinite(value), `${node.name} finite complexion color`);
+    }
     assert.ok(positions.count > 0, `${node.name} has positions`);
     for (const coordinate of positions.array) assert.ok(Number.isFinite(coordinate), `${node.name} finite coordinate`);
     triangles += (node.geometry.index?.count ?? positions.count) / 3;
   });
+  assert.ok(hasComplexionColors, "anatomical complexion vertex colors survive export");
   assert.ok(triangles > 1000, "non-placeholder detailed geometry");
   assert.ok(triangles < 500000, "bounded real-time geometry budget");
 });

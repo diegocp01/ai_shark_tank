@@ -1,24 +1,33 @@
-# Kevin likeness study, iteration 1
+# Kevin likeness study, iteration 2
 
-Handcrafted Blender geometry inspired by the user-provided Kevin O’Leary TV reference. This is an independent stylized likeness study, not a photogrammetry scan or a claim of endorsement. The source photograph is not redistributed.
+A reference-guided Blender likeness study of Kevin O’Leary, using a connected CC0 anatomical base with edited proportions, localized facial morphology, individual brow/temple fibers and a tailored black suit. This is not photogrammetry, an endorsement, or a finished photorealistic likeness. The user-provided photograph is not redistributed.
 
 ## Review
 
-Run `npm install && npm start`, then open `/kevin.html`. The existing five fictional episode characters are unchanged. The isolated review page allows likeness approval before deciding which character/slot to replace.
+Run `npm install && npm start`, then open `/kevin.html`. The five existing fictional episode characters are unchanged. The isolated page permits review before deciding on cast mapping and animation integration.
 
-- `kevin.blend`: editable source, named facial/clothing components, studio lighting and review camera.
+- `kevin.blend`: editable, named anatomy/clothing objects, quad head with subdivision, studio lights and review camera.
+- `anatomical-head.npz`: bundled anatomical mesh derivative, UVs and eye centers for reproducible offline builds.
 - `../../public/models/kevin/kevin.glb`: web runtime asset, metres, Y-up, facing +Z.
-- `../../scripts/build_kevin.py`: deterministic Blender 4.3+ build script.
-- `../../docs/kevin/portrait.png` and `full-body.png`: actual Blender renders, not generated concept images.
+- `../../scripts/build_kevin.py`: deterministic Blender 4.3+ entry point; anatomy/detail/body modules are alongside it.
+- `../../docs/kevin/portrait.png` and `full-body.png`: actual Blender Cycles renders.
+- `../../docs/kevin/iteration-1.png`: superseded first study for visual comparison, not the current asset.
+- `PROVENANCE.md` and `LICENSE-MAKEHUMAN-CC0.md`: precise anatomical asset origin and redistribution license.
 
-Rebuild from repository root: `blender -b --python scripts/build_kevin.py -- --render`.
+Rebuild from repository root:
 
-## Scope and limitations
+`blender -b --python scripts/build_kevin.py -- --render`
 
-The asset targets a broad bald cranium, gray temple hair, mature eye folds, fuller cheeks, a charcoal notched-lapel suit, white shirt, black tie and red pocket square. Geometry, materials and clothing are authored from scratch. It remains stylized and is intended for further likeness iteration, not marketed as photorealistic.
+The checked-in anatomical data makes the build independent of a MakeHuman installation or network access. Blender includes the required NumPy module.
 
-The neutral standing figure is **not rigged**. There are no facial blendshapes, lip-sync or animation clips. The existing procedural studio rig is not compatible automatically. Integration should follow likeness approval, with a deliberate cast mapping and rigging step, not a silent replacement of Rex or another shark.
+## Changes from the rejected first study
 
-Blender’s micro-bump/subsurface skin appearance is not fully portable to the standard GLB material. The GLB carries the authored PBR base colors/roughness/metalness, not a baked pore texture. Viewer lighting will differ from Cycles renders.
+The disconnected primitive face is replaced by connected anatomical quad topology: true eyelid openings, nostrils/alar wings, lips, ears, cheek/jowl contours and a continuous neck. The crown, nose, mouth and cheek proportions were revised against the newer reference; skin has localized pigment variation, subdued age creases and pore-scale shading. Brows and cropped gray temple hair are separate editable strands. The body is rebuilt with continuous sloped shoulders, more organic sleeves, anatomical hands and finer tailoring rather than stacked cylinders.
 
-The referenced television image provides a seated three-quarter face view; hidden anatomy and the standing pose are artistic approximations.
+## Scope and remaining work
+
+Likeness still needs artistic review and refinement. Hidden anatomy and the standing pose are approximations from a seated three-quarter reference. This draft is a materially revised study, not a claim that the close-to-real goal is complete.
+
+The figure is **not rigged**. No facial blendshapes, lip-sync or animation clips are included. The existing procedural studio rig is not automatically compatible. Integration should follow likeness approval, an explicit cast mapping and a dedicated rigging step.
+
+The GLB carries geometry, vertex complexion colors and standard PBR material channels. Blender’s procedural pore/fabric bump and subsurface appearance are not baked into the GLB, so web shading differs from Cycles. No production cast replacement, merge or deployment is included.
