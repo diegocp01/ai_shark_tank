@@ -68,9 +68,10 @@ function matchSkinTone(model, tone) {
   const target = new THREE.Color(tone);
 
   model.traverse((node) => {
-    // Skin meshes are named "...Skin_|_<tone>" (hands) or "..._anatomical_head" (face);
-    // every skinned part is prefixed "Kevin_skin_", so match case-sensitively.
-    if (!node.isMesh || !/Skin_\|_|anatomical_head/.test(node.name)) {
+    // Skin meshes: Kevin's "...Skin_|_<tone>" and "..._anatomical_head", Lori's
+    // "..._anatomical_face" and "..._warm_peach_skin". Every Kevin part is prefixed
+    // "Kevin_skin_", so match case-sensitively.
+    if (!node.isMesh || !/Skin_\|_|anatomical_(head|face)|_skin$/.test(node.name)) {
       return;
     }
 
@@ -153,6 +154,14 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
 
   const morphMeshes = [];
   model.traverse((node) => {
+    // Full-strength fabric sheen from Blender reads as gray satin under the
+    // studio's lights; keep a soft velvet edge in the fabric's own color.
+    if (node.isMesh && node.material.sheen > 0.35) {
+      node.material.sheen = 0.35;
+      node.material.sheenRoughness = Math.max(node.material.sheenRoughness ?? 0, 0.8);
+      node.material.sheenColor?.copy(node.material.color).lerp(new THREE.Color(1, 1, 1), 0.08);
+    }
+
     if (node.isMesh) {
       node.castShadow = true;
       node.receiveShadow = true;

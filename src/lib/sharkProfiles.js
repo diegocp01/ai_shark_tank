@@ -26,7 +26,7 @@ export const SHARK_PROFILES = [
     color: "#7ce8c8",
     accent: "#dffff6",
     icon: "LU",
-    look: { top: "dress", suit: "#f0bf2c", skin: "#e6b08f", hair: "#e3c88c", hairStyle: "long-straight", brows: "soft", mouth: "lipstick", lipstick: "#d2546b", lashes: true },
+    look: { top: "dress", suit: "#1b1a1e", skin: "#e6b08f", hair: "#d4b889", hairStyle: "long-straight", brows: "soft", mouth: "lipstick", lipstick: "#d2546b", lashes: true, model: "lori" },
     voice: { pitch: 1.2, rate: 1.02 },
     weights: { novelty: 0.34, scalability: 0.34, brand: 0.12, traction: 0.12, risk: -0.08 },
     threshold: 0.66,

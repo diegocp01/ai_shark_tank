@@ -28,12 +28,12 @@ The sharks' looks nod to the real panel, but their on-air names stay fictional b
 | Seat | Persona | Look |
 | --- | --- | --- |
 | Rex | The Skeptic | The rigged Blender model of Kevin O'Leary: bald, gray temples, black suit, crimson pocket square |
-| Luna | The Visionary | Long straight blonde hair, yellow dress |
+| Luna | The Visionary | The rigged Blender model of Lori Greiner: blonde side-parted waves, black one-shoulder top |
 | Max | The Numbers Shark | Shaved head, trimmed beard, navy suit, gold tie |
 | Vera | The Brand Guru | Short full blonde hair, hot-pink blazer, pearls |
 | Wild Wes | The Wildcard | Short dark hair, navy blazer, open collar, jeans |
 
-Rex uses `public/models/kevin/kevin-rigged.glb` (18 bones plus `mouthOpen`, `blink`, `smile`, and `frown` morphs; see `assets/kevin/RIGGING.md`). `public/js/studio/skin.js` drives it from the same procedural joint rig as the rest of the cast, so he sits, gestures, crosses his arms when he's out, turns to whoever is talking, talks, blinks, and stands for the handshake. In light mode (software WebGL), Rex uses a procedural stand-in. The other four are procedural.
+Rex uses `public/models/kevin/kevin-rigged.glb` and Luna uses `public/models/lori/lori-rigged.glb`. Both share an 18-bone contract plus `mouthOpen`, `blink`, `smile`, and `frown` morphs (see `assets/kevin/RIGGING.md` and `docs/lori/README.md`). `public/js/studio/skin.js` drives them from the same procedural joint rig as the rest of the cast, so they sit, gesture, cross their arms when they're out, turn to whoever is talking, talk, blink, and stand for the handshake. Any shark whose look names a `model` loads `/models/<model>/<model>-rigged.glb` the same way. In light mode (software WebGL), they use procedural stand-ins. The other three are procedural.
 
 To review the Kevin asset on its own, open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html) (portrait and full-figure framing, three angles, orbit, zoom). The editable Blender sources are `assets/kevin/kevin.blend` and `assets/kevin/kevin-rigged.blend`.
 
@@ -132,7 +132,7 @@ public/js/director.js          Clock-driven playback engine (pure, unit-tested)
 public/js/studio/studio.js     3D renderer, blocking, and the camera director (shots and cuts)
 public/js/studio/set.js        The set: slat wall, stairs, lounge chairs, side tables, rug, hallway, lights
 public/js/studio/character.js  Rigged procedural 3D people (poses, walking, gestures, gaze, blinking, talking)
-public/js/studio/skin.js       Drives rigged GLB characters (Kevin) from the procedural joint rig
+public/js/studio/skin.js       Drives rigged GLB characters (Kevin, Lori) from the procedural joint rig
 public/js/studio/textures.js   Painted textures: outfits, rug, product board, sign, wood, marble
 public/js/voice.js             Optional browser speech synthesis
 tests/node/                    Engine, reducer, director, and HTTP API tests
