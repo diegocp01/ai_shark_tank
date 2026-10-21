@@ -9,3 +9,7 @@ npm-debug.log*
 .DS_Store
 test-results/
 playwright-report/
+
+# Local Blender backup files
+*.blend1
+*.blend2

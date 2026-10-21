@@ -1,0 +1,26 @@
+{
+  "maximum_influences": 4,
+  "weighted_vertices": 181661,
+  "stable_chest_vertices": 9673,
+  "bones": [
+    "pelvis",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "jaw",
+    "upperarm.L",
+    "forearm.L",
+    "hand.L",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "upperarm.R",
+    "forearm.R",
+    "hand.R",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "glb_bytes": 11480556
+}

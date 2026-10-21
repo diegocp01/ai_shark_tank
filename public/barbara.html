@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Barbara character asset study for AI Shark Tank. A standalone review scene, separate from the episode cast." />
+    <title>Barbara · Character study</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/kevin.css" />
+    <script type="importmap">
+      {"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}
+    </script>
+  </head>
+  <body>
+    <main class="study">
+      <header class="study-header">
+        <div><a class="back-link" href="/">AI Shark Tank</a><p class="eyebrow">Character development · 03</p><h1>Barbara</h1></div>
+        <p class="study-note">Blender asset study<br /><span>Review scene, not the episode cast</span></p>
+      </header>
+      <div id="viewport" role="img" aria-label="Interactive 3D Barbara character. Use the named view buttons below to inspect the model."></div>
+      <div class="status-wrap"><p id="status" role="status" aria-live="polite">Loading Barbara’s model…</p><button id="retry" hidden type="button">Reload model</button></div>
+      <aside class="model-caption"><span class="caption-line"></span><p>Barbara Corcoran<br /><span>Character likeness study</span></p></aside>
+      <footer class="study-controls" aria-label="Model review controls">
+        <div class="control-row">
+          <div class="button-group" role="group" aria-label="Framing">
+            <button type="button" data-frame="portrait" aria-pressed="true">Portrait</button><button type="button" data-frame="full" aria-pressed="false">Full figure</button>
+          </div>
+          <div class="button-group" role="group" aria-label="Angle">
+            <button type="button" data-angle="front" aria-pressed="false">Front</button><button type="button" data-angle="threequarter" aria-pressed="true">¾ view</button><button type="button" data-angle="profile" aria-pressed="false">Profile</button>
+          </div>
+          <button type="button" id="rotate" aria-pressed="false">Auto rotate</button><button type="button" id="reset">Reset view</button>
+        </div>
+        <div class="control-row expressions" role="group" aria-label="Facial expressions">
+          <button type="button" data-expression="neutral" aria-pressed="true">Neutral</button>
+          <button type="button" data-expression="smile" aria-pressed="false">Smile</button>
+          <button type="button" data-expression="frown" aria-pressed="false">Frown</button>
+          <button type="button" data-expression="blink" aria-pressed="false">Blink</button>
+          <button type="button" data-expression="mouthOpen" aria-pressed="false">Mouth open</button>
+        </div>
+        <p class="help">Drag to orbit · Scroll to zoom · Right-drag to pan<span id="model-info"></span></p>
+      </footer>
+      <noscript><p class="no-script">Enable JavaScript to view the 3D study.</p></noscript>
+    </main>
+    <script type="module" src="/js/barbara-viewer.js"></script>
+  </body>
+</html>
