@@ -1,7 +1,7 @@
 # AI Shark Tank
 
 <p align="center">
-  <img src="static/image.jpg" alt="AI Shark Tank: Wild Wes stands up to shake on a deal with the founder of Barklight Labs" width="900" />
+  <img src="static/image.jpg" alt="AI Shark Tank: Rex, the Skeptic, played by the rigged Kevin model, grills the founder from his lounge chair" width="900" />
 </p>
 
 `AI Shark Tank` is a Shark Tank episode you watch in the browser, filmed like the TV show: a 3D studio with the five AI sharks in their lounge chairs, an AI founder who walks in down the hallway, and every question, offer, counter, and handshake cut together from show-style camera angles. There's no dashboard. It plays full screen with TV graphics, made for screenshots, short videos, and social-ready demos.
@@ -21,24 +21,27 @@ npm start
 
 Open [http://127.0.0.1:5050](http://127.0.0.1:5050). No `.env` is needed.
 
-### Kevin character study
+### The cast
 
-Open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html)
-to review the Blender-authored Kevin O’Leary asset. The viewer includes portrait
-and full-figure framing, front/three-quarter/profile angles, orbit, zoom, and
-optional automatic rotation. It is an isolated asset study: **the five fictional
-episode characters, their animation system, and episode logic are unchanged.**
+The sharks' looks nod to the real panel, but their on-air names stay fictional because every line they say is generated:
 
-The runtime asset lives at `public/models/kevin/kevin.glb`; the editable Blender
-source lives at `assets/kevin/kevin.blend`. This is a likeness-development pass,
-not a claim of a scan-quality digital double or an animation-ready replacement
-for the studio character rig.
+| Seat | Persona | Look |
+| --- | --- | --- |
+| Rex | The Skeptic | The rigged Blender model of Kevin O'Leary: bald, gray temples, black suit, crimson pocket square |
+| Luna | The Visionary | Long straight blonde hair, yellow dress |
+| Max | The Numbers Shark | Shaved head, trimmed beard, navy suit, gold tie |
+| Vera | The Brand Guru | Short full blonde hair, hot-pink blazer, pearls |
+| Wild Wes | The Wildcard | Short dark hair, navy blazer, open collar, jeans |
+
+Rex uses `public/models/kevin/kevin-rigged.glb` (18 bones plus `mouthOpen`, `blink`, `smile`, and `frown` morphs; see `assets/kevin/RIGGING.md`). `public/js/studio/skin.js` drives it from the same procedural joint rig as the rest of the cast, so he sits, gestures, crosses his arms when he's out, turns to whoever is talking, talks, blinks, and stands for the handshake. In light mode (software WebGL), Rex uses a procedural stand-in. The other four are procedural.
+
+To review the Kevin asset on its own, open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html) (portrait and full-figure framing, three angles, orbit, zoom). The editable Blender sources are `assets/kevin/kevin.blend` and `assets/kevin/kevin-rigged.blend`.
 
 ## How it works
 
 <p align="center">
   <img src="static/lobby.jpg" alt="The title screen: pick tonight's founder over a live shot of the shark panel" width="440" />
-  <img src="static/pitch.jpg" alt="Over the sharks' shoulders: the founder on the rug with the product display, in front of the entrance hallway" width="440" />
+  <img src="static/pitch.jpg" alt="The handshake: Max stands to shake on a deal with the founder of LedgerLoop" width="440" />
 </p>
 
 1. **Pick a founder.** Six hand-written pitches (pet hardware, food-truck SaaS, frozen dumplings, a sassy plant sensor, ocean-plastic buoys, a mismatched-sock club), or type your own idea and the engine builds a company around it.
@@ -129,6 +132,7 @@ public/js/director.js          Clock-driven playback engine (pure, unit-tested)
 public/js/studio/studio.js     3D renderer, blocking, and the camera director (shots and cuts)
 public/js/studio/set.js        The set: slat wall, stairs, lounge chairs, side tables, rug, hallway, lights
 public/js/studio/character.js  Rigged procedural 3D people (poses, walking, gestures, gaze, blinking, talking)
+public/js/studio/skin.js       Drives rigged GLB characters (Kevin) from the procedural joint rig
 public/js/studio/textures.js   Painted textures: outfits, rug, product board, sign, wood, marble
 public/js/voice.js             Optional browser speech synthesis
 tests/node/                    Engine, reducer, director, and HTTP API tests

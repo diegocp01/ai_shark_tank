@@ -9,7 +9,8 @@ const baseURL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 60_000,
+  // Software WebGL is slow; full episodes plus the rigged-model test need headroom.
+  timeout: 120_000,
   expect: {
     timeout: 15_000,
   },
