@@ -31,3 +31,7 @@ Likeness still needs artistic review and refinement. Hidden anatomy and the stan
 The figure is **not rigged**. No facial blendshapes, lip-sync or animation clips are included. The existing procedural studio rig is not automatically compatible. Integration should follow likeness approval, an explicit cast mapping and a dedicated rigging step.
 
 The GLB carries geometry, vertex complexion colors and standard PBR material channels. Blender’s procedural pore/fabric bump and subsurface appearance are not baked into the GLB, so web shading differs from Cycles. No production cast replacement, merge or deployment is included.
+
+## Separate rigged variant
+
+The original standing study above remains unchanged. `kevin-rigged.blend` and `../../public/models/kevin/kevin-rigged.glb` add the requested 18-bone skin and four facial morphs without replacing the original runtime asset. See [RIGGING.md](RIGGING.md) for bone hierarchy, coordinate/rest-axis notes, controls, reproducible build and seated validation.

@@ -1,0 +1,27 @@
+{
+  "vertices": 18049,
+  "morphs": {
+    "mouthOpen": {
+      "affected_vertices": 5808,
+      "maximum_displacement_m": 0.040615011006593704
+    },
+    "blink": {
+      "affected_vertices": 1516,
+      "maximum_displacement_m": 0.010021788999438286
+    },
+    "smile": {
+      "affected_vertices": 3790,
+      "maximum_displacement_m": 0.007956096902489662
+    },
+    "frown": {
+      "affected_vertices": 3112,
+      "maximum_displacement_m": 0.004972874186933041
+    }
+  },
+  "transfer_max_errors": {
+    "mouthOpen": 4.76837158203125e-07,
+    "blink": 4.76837158203125e-07,
+    "smile": 4.76837158203125e-07,
+    "frown": 4.76837158203125e-07
+  }
+}
