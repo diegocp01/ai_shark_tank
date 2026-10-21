@@ -135,12 +135,16 @@ describe("POST /api/feasibility-report", () => {
 });
 
 describe("static routes", () => {
-  it("serves the app shell, shared modules, and JSON 404s for unknown API routes", async () => {
+  it("serves the app shell, shared modules, Three.js, and JSON 404s for unknown API routes", async () => {
     const page = await request(app).get("/some/deep/link").expect(200);
     assert.match(page.text, /<title>AI Shark Tank<\/title>/);
 
     const shared = await request(app).get("/shared/board.js").expect(200);
     assert.match(shared.headers["content-type"], /javascript/);
+
+    const three = await request(app).get("/vendor/three/build/three.module.js").expect(200);
+    assert.match(three.headers["content-type"], /javascript/);
+    await request(app).get("/vendor/three/examples/jsm/postprocessing/EffectComposer.js").expect(200);
 
     const missing = await request(app).get("/api/live-episode").expect(404);
     assert.equal(missing.body.detail, "Not found.");

@@ -49,7 +49,7 @@ export const PRESET_PITCHES = [
       weakness: "Hardware strapped to a dog's neck is a returns nightmare waiting to happen",
       cta: "light up the room with me",
     },
-    founder: { name: "Avery", style: "balanced", suit: "#24324f", accent: "#7ce8c8" },
+    founder: { name: "Avery", style: "balanced", suit: "#24324f", accent: "#7ce8c8", skin: "#f1c6a5", hair: "#6a4a33", hairStyle: "short" },
   },
   {
     id: "ledgerloop",
@@ -88,7 +88,7 @@ export const PRESET_PITCHES = [
       weakness: "Bookkeeping is a crowded category, and the big players could bundle this in a weekend",
       cta: "keep the line moving",
     },
-    founder: { name: "Priya", style: "stubborn", suit: "#31564c", accent: "#f5c453" },
+    founder: { name: "Priya", style: "stubborn", suit: "#31564c", accent: "#f5c453", skin: "#b37b53", hair: "#1c1719", hairStyle: "bun", lashes: true },
   },
   {
     id: "dumpling-dynasty",
@@ -126,7 +126,7 @@ export const PRESET_PITCHES = [
       weakness: "Frozen food is a brutal, low-margin war for shelf space",
       cta: "take a bite",
     },
-    founder: { name: "Marco", style: "eager", suit: "#6b2c39", accent: "#ff8bc2" },
+    founder: { name: "Marco", style: "eager", suit: "#6b2c39", accent: "#ff8bc2", skin: "#e3aa83", hair: "#2a1e18", hairStyle: "slick", beard: "full" },
   },
   {
     id: "sproutsy",
@@ -164,7 +164,7 @@ export const PRESET_PITCHES = [
       weakness: "A sensor that texts you is a feature, not a company, and it's easy to copy",
       cta: "help me save the houseplants",
     },
-    founder: { name: "June", style: "stubborn", suit: "#56705a", accent: "#7ce8c8" },
+    founder: { name: "June", style: "stubborn", suit: "#56705a", accent: "#7ce8c8", skin: "#f6d4bb", hair: "#9a4425", hairStyle: "long-straight", lashes: true },
   },
   {
     id: "tidetrack",
@@ -203,7 +203,7 @@ export const PRESET_PITCHES = [
       weakness: "Selling to governments takes forever, and ocean hardware breaks in expensive ways",
       cta: "clean up the ocean with me",
     },
-    founder: { name: "Kai", style: "balanced", suit: "#2f4f86", accent: "#86a5ff" },
+    founder: { name: "Kai", style: "balanced", suit: "#2f4f86", accent: "#86a5ff", skin: "#8e5b3c", hair: "#1c1719", hairStyle: "curly-short" },
   },
   {
     id: "odd-sox",
@@ -241,7 +241,7 @@ export const PRESET_PITCHES = [
       weakness: "Novelty socks are a fad, and fads end",
       cta: "join the club",
     },
-    founder: { name: "Theo", style: "eager", suit: "#674366", accent: "#86a5ff" },
+    founder: { name: "Theo", style: "eager", suit: "#674366", accent: "#86a5ff", skin: "#eab995", hair: "#d9b56e", hairStyle: "short" },
   },
 ];
 
