@@ -38,3 +38,9 @@ export function icon(name, { className = "", label = "" } = {}) {
 
   return `<svg class="icon ${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${a11y} focusable="false">${body}</svg>`;
 }
+
+// Standalone SVG (explicit color + size) for drawing an icon into a canvas.
+export function iconSvg(name, color = "#000", size = 96) {
+  const body = (PATHS[name] || PATHS.spark).replace(/currentColor/g, color);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+}

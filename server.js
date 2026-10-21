@@ -92,6 +92,8 @@ export function createApp() {
   app.use(express.json({ limit: "16kb" }));
   app.use(express.static(path.join(__dirname, "public")));
   app.use("/shared", express.static(path.join(__dirname, "src", "shared")));
+  app.use("/vendor/three/build", express.static(path.join(__dirname, "node_modules", "three", "build")));
+  app.use("/vendor/three/examples/jsm", express.static(path.join(__dirname, "node_modules", "three", "examples", "jsm")));
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", provider: provider.id });

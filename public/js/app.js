@@ -1,59 +1,46 @@
 import { applyBeat, createBoard } from "/shared/board.js";
-import { formatMoneyShort, formatPercent } from "/shared/format.js";
+import { formatMoneyFull, formatMoneyShort, formatOfferFull, formatPercent } from "/shared/format.js";
 import { createConfetti } from "./confetti.js";
 import { createDirector } from "./director.js";
-import { avatar } from "./figures.js";
 import { icon } from "./icons.js";
-import {
-  createCaption,
-  createTranscript,
-  escapeHtml,
-  renderBoard,
-  renderPhaseRail,
-  renderVerdict,
-} from "./panels.js";
-import { createStage } from "./stage.js";
+import { createStudio } from "./studio/studio.js";
 import { createVoice } from "./voice.js";
 
 const SPEEDS = [1, 1.5, 2, 3];
+const CUSTOM_FOUNDER = { name: "You", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" };
 const $ = (selector) => document.querySelector(selector);
 
 const elements = {
   body: document.body,
-  frame: $("#stage-frame"),
-  scene: $("#scene"),
-  hero: $("#hero"),
-  heroTitle: $("#hero-title"),
-  heroTagline: $("#hero-tagline"),
-  heroChips: $("#hero-chips"),
-  hudSeed: $("#hud-seed"),
+  stage: $("#stage"),
   timecode: $("#timecode"),
-  phaseRail: $("#phase-rail"),
-  stamp: $("#stamp"),
-  stampLabel: $("#stamp-label"),
-  confetti: $("#confetti"),
-  caption: $("#caption"),
-  transport: $("#transport"),
-  progressTrack: $("#progress-track"),
-  progressFill: $("#progress-fill"),
-  progressLabel: $("#progress-label"),
-  speed: $("#speed"),
-  meetList: $("#meet-list"),
-  dossier: $("#dossier"),
   pitchList: $("#pitch-list"),
+  tonightTitle: $("#tonight-title"),
+  tonightDetail: $("#tonight-detail"),
+  ownIdea: $("#own-idea"),
   ideaInput: $("#idea-input"),
   charCount: $("#char-count"),
   seedInput: $("#seed-input"),
   seedDice: $("#seed-dice"),
-  lobbyError: $("#lobby-error"),
   rollButton: $("#roll-button"),
-  tabs: document.querySelectorAll(".tab"),
-  boardPanel: $("#board-panel"),
-  transcriptPanel: $("#transcript-panel"),
+  lobbyError: $("#lobby-error"),
+  lowerThird: $("#lower-third"),
+  ltKicker: $("#lt-kicker"),
+  ltTitle: $("#lt-title"),
+  caption: $("#caption"),
+  subName: $("#sub-name"),
+  subText: $("#sub-text"),
+  stamp: $("#stamp"),
+  stampLabel: $("#stamp-label"),
+  confetti: $("#confetti"),
+  transport: $("#transport"),
+  progress: $("#progress"),
+  progressFill: $("#progress-fill"),
+  speed: $("#speed"),
   verdict: $("#verdict"),
   toast: $("#toast"),
   announcer: $("#announcer"),
-  providerLabel: $("#provider-label"),
+  transcript: $("#transcript"),
 };
 
 const state = {
@@ -62,28 +49,33 @@ const state = {
   selection: { pitchId: null, idea: "", seed: 1 },
   episode: null,
   download: null,
-  allTime: null,
   board: null,
   director: null,
   speed: 1,
   voiceOn: false,
-  thinkingId: null,
   playedMs: 0,
   clockStartedAt: null,
   loading: false,
-  autoplay: false,
 };
 
-const stage = createStage({ root: elements.scene, frame: elements.frame });
-const caption = createCaption(elements.caption);
-const transcript = createTranscript(elements.transcriptPanel);
 const confetti = createConfetti(elements.confetti);
+let studio = null;
 let voice = null;
-let stampTimer = null;
-let toastTimer = null;
-let verdictTimer = null;
+const timers = { stamp: null, toast: null, verdict: null, lowerThird: null, controls: null };
+// Like a TV graphic, a lower-third goes out with the cut: it is cleared when
+// this test passes for the next beat (null = stays up).
+let lowerThirdUntil = null;
 
-// --- Persistence (per-viewer conveniences only) ---------------------------------
+// --- Small helpers -----------------------------------------------------------
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function remember(key, value) {
   try {
@@ -102,34 +94,40 @@ function recall(key, fallback) {
   }
 }
 
-// --- Small UI helpers ----------------------------------------------------------
+function showToast(message) {
+  window.clearTimeout(timers.toast);
+  elements.toast.textContent = message;
+  elements.toast.classList.add("is-visible");
+  timers.toast = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 2400);
+}
+
+function sharkById(id) {
+  return state.config.sharks.find((shark) => shark.id === id);
+}
+
+function colorFor(speakerId) {
+  if (speakerId === "founder") {
+    return state.episode?.pitch.founder.accent || "#39e0c8";
+  }
+
+  return sharkById(speakerId)?.color || "#f6c55b";
+}
+
+function stagePitch(pitch) {
+  return { ...pitch, askLabel: `Seeking ${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}` };
+}
 
 function setView(view) {
   state.view = view;
   elements.body.dataset.view = view;
-  stage.setMood(view === "lobby" ? "lobby" : "show");
-  requestAnimationFrame(() => stage.resize());
+  studio?.setMood(view === "lobby" ? "lobby" : "show");
 }
 
-function showToast(message) {
-  window.clearTimeout(toastTimer);
-  elements.toast.textContent = message;
-  elements.toast.classList.add("is-visible");
-  toastTimer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 2400);
-}
-
-function announce(message) {
-  elements.announcer.textContent = message;
-}
+// --- Clock -------------------------------------------------------------------
 
 function formatClock(ms) {
   const total = Math.floor(ms / 1000);
-  const parts = [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60];
-  return parts.map((part) => String(part).padStart(2, "0")).join(":");
-}
-
-function playedTime() {
-  return state.playedMs + (state.clockStartedAt ? performance.now() - state.clockStartedAt : 0);
+  return [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60].map((part) => String(part).padStart(2, "0")).join(":");
 }
 
 function runClock(running) {
@@ -142,8 +140,11 @@ function runClock(running) {
 }
 
 window.setInterval(() => {
-  elements.timecode.textContent = formatClock(playedTime());
+  const played = state.playedMs + (state.clockStartedAt ? performance.now() - state.clockStartedAt : 0);
+  elements.timecode.textContent = formatClock(played);
 }, 250);
+
+// --- URL -------------------------------------------------------------------------
 
 function readUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -161,60 +162,49 @@ function readUrl() {
 function shareUrl() {
   const params = new URLSearchParams();
   const { pitch, seed } = state.episode;
-
-  if (pitch.custom) {
-    params.set("idea", pitch.idea);
-  } else {
-    params.set("pitch", pitch.id);
-  }
-
+  params.set(pitch.custom ? "idea" : "pitch", pitch.custom ? pitch.idea : pitch.id);
   params.set("seed", String(seed));
   return `${window.location.origin}/?${params.toString()}`;
 }
 
 function syncUrl() {
+  const quality = new URLSearchParams(window.location.search).get("quality");
+  const keep = quality ? `quality=${quality}` : "";
+
   if (!state.episode) {
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", keep ? `/?${keep}` : "/");
     return;
   }
 
-  window.history.replaceState(null, "", shareUrl().replace(window.location.origin, ""));
+  const url = shareUrl().replace(window.location.origin, "");
+  window.history.replaceState(null, "", keep ? `${url}&${keep}` : url);
 }
 
-async function copyText(text, successMessage) {
+async function copyText(text, message) {
   try {
     await navigator.clipboard.writeText(text);
-    showToast(successMessage);
+    showToast(message);
   } catch {
     showToast("Copy failed. Your browser blocked clipboard access.");
   }
 }
 
-// --- Lobby ---------------------------------------------------------------------
+// --- Lobby -----------------------------------------------------------------------
 
 function selectedPitch() {
   return state.config.pitches.find((pitch) => pitch.id === state.selection.pitchId) || null;
 }
 
-function renderHero() {
+function renderTonight() {
   const pitch = state.selection.idea ? null : selectedPitch();
 
   if (pitch) {
-    elements.heroTitle.textContent = pitch.startupName;
-    elements.heroTagline.textContent = pitch.tagline;
-    elements.heroChips.innerHTML = [
-      `<span class="chip chip-gold">${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}</span>`,
-      `<span class="chip">${formatMoneyShort(pitch.valuationUsd)} valuation</span>`,
-      `<span class="chip">${escapeHtml(pitch.categoryLabel)}</span>`,
-      `<span class="chip">Founder: ${escapeHtml(pitch.founder.name)}</span>`,
-    ].join("");
+    elements.tonightTitle.textContent = `${pitch.startupName} · seeking ${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}`;
+    elements.tonightDetail.textContent = pitch.tagline;
   } else {
-    elements.heroTitle.textContent = "Your pitch";
     const idea = state.selection.idea;
-    elements.heroTagline.textContent = idea
-      ? `${idea[0].toUpperCase()}${idea.slice(1)}`
-      : "Describe a startup and the sharks will take it from there.";
-    elements.heroChips.innerHTML = `<span class="chip chip-gold">Custom idea</span><span class="chip">Seed ${state.selection.seed}</span>`;
+    elements.tonightTitle.textContent = "Your pitch";
+    elements.tonightDetail.textContent = idea ? `${idea[0].toUpperCase()}${idea.slice(1)}` : "Describe a startup and the sharks take it from there.";
   }
 }
 
@@ -222,43 +212,37 @@ function previewSelection() {
   const pitch = selectedPitch();
 
   if (state.selection.idea || !pitch) {
-    stage.setPitch({
+    studio.setPitch({
+      id: "custom",
       productName: "Your idea",
-      tagline: state.selection.idea || "Describe a startup and the sharks will take it from there.",
+      tagline: state.selection.idea || "",
       startupName: "Custom pitch",
       icon: "sparkle",
       askLabel: "Ask TBD",
-      founder: { name: "You", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" },
+      founder: CUSTOM_FOUNDER,
     });
   } else {
-    stage.setPitch(pitch);
+    studio.setPitch(stagePitch(pitch));
   }
 
-  stage.placeFounder("mark");
-  renderHero();
+  studio.placeFounder("mark");
+  renderTonight();
 }
 
-function renderPitchList() {
+function renderLineup() {
   elements.pitchList.innerHTML = state.config.pitches
     .map((pitch) => {
       const selected = !state.selection.idea && pitch.id === state.selection.pitchId;
       return `
-        <li role="none">
-          <button class="pitch-card" type="button" role="radio" aria-checked="${selected}" tabindex="${selected ? 0 : -1}" data-pitch="${pitch.id}" style="--accent:${pitch.founder.accent}">
-            <span class="pitch-icon">${icon(pitch.icon)}</span>
-            <span class="pitch-copy">
-              <strong>${escapeHtml(pitch.startupName)}</strong>
-              <span>${escapeHtml(pitch.tagline)}</span>
-            </span>
-            <span class="pitch-ask"><b>${formatMoneyShort(pitch.askUsd)}</b><small>for ${formatPercent(pitch.equityPct)}</small></span>
-          </button>
-        </li>`;
+        <button class="lineup-card" type="button" role="radio" aria-checked="${selected}" tabindex="${selected ? 0 : -1}" data-pitch="${pitch.id}" style="--accent:${pitch.founder.accent}">
+          <span class="lineup-icon">${icon(pitch.icon)}</span>
+          <span><strong>${escapeHtml(pitch.startupName)}</strong><small>${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}</small></span>
+        </button>`;
     })
     .join("");
 
-  // Keep one card tabbable when a custom idea is selected.
   if (state.selection.idea) {
-    elements.pitchList.querySelector(".pitch-card")?.setAttribute("tabindex", "0");
+    elements.pitchList.querySelector(".lineup-card")?.setAttribute("tabindex", "0");
   }
 }
 
@@ -267,7 +251,7 @@ function selectPitch(pitchId, { focus = false } = {}) {
   state.selection.idea = "";
   elements.ideaInput.value = "";
   updateCharCount();
-  renderPitchList();
+  renderLineup();
   previewSelection();
   hideLobbyError();
 
@@ -282,13 +266,7 @@ function updateCharCount() {
 
 function readSeed() {
   const seed = Number.parseInt(elements.seedInput.value, 10);
-  const maxSeed = state.config.limits.maxSeed;
-
-  if (!Number.isInteger(seed) || seed < 1 || seed > maxSeed) {
-    return null;
-  }
-
-  return seed;
+  return Number.isInteger(seed) && seed >= 1 && seed <= state.config.limits.maxSeed ? seed : null;
 }
 
 function showLobbyError(message) {
@@ -303,28 +281,102 @@ function hideLobbyError() {
 function setRollLoading(loading) {
   state.loading = loading;
   elements.rollButton.disabled = loading;
-  elements.rollButton.innerHTML = loading
-    ? `<span class="spinner" aria-hidden="true"></span><span>Setting up the studio</span>`
-    : `${icon("play")}<span>Roll the cameras</span>`;
+  elements.rollButton.innerHTML = loading ? `<span class="spinner" aria-hidden="true"></span>Rolling` : `${icon("play")}Enter the tank`;
 }
 
-function renderMeet() {
-  elements.meetList.innerHTML = state.config.sharks
-    .map(
-      (shark) => `
-        <li class="meet-card" style="--who:${shark.color}">
-          ${avatar(shark, { className: "avatar-md" })}
-          <div>
-            <strong>${escapeHtml(shark.displayName)}</strong>
-            <span class="meet-persona">${escapeHtml(shark.persona)}</span>
-            <p>${escapeHtml(shark.style)}</p>
-          </div>
-        </li>`,
-    )
-    .join("");
+// --- Broadcast graphics -------------------------------------------------------------
+
+function showLowerThird({ kicker, title, color = "#f6c55b", duration = 4200, until = null }) {
+  window.clearTimeout(timers.lowerThird);
+  lowerThirdUntil = until;
+  elements.ltKicker.textContent = kicker;
+  elements.ltTitle.textContent = title;
+  elements.lowerThird.style.setProperty("--lt-color", color);
+  elements.lowerThird.classList.add("is-visible");
+
+  if (duration > 0) {
+    timers.lowerThird = window.setTimeout(() => elements.lowerThird.classList.remove("is-visible"), duration);
+  }
 }
 
-// --- Show ----------------------------------------------------------------------
+function hideLowerThird() {
+  window.clearTimeout(timers.lowerThird);
+  lowerThirdUntil = null;
+  elements.lowerThird.classList.remove("is-visible");
+}
+
+function termsFor(offer) {
+  const kicker = offer.kicker?.short ? ` + ${offer.kicker.short}` : "";
+  return `${formatMoneyFull(offer.cashUsd)} for ${formatPercent(offer.equityPct)}${kicker}`;
+}
+
+function namesFor(ids) {
+  return ids.map((id) => sharkById(id)?.displayName || id).join(" + ");
+}
+
+function graphicForEffect(effect) {
+  const ids = effect.sharkIds || (effect.sharkId ? [effect.sharkId] : []);
+
+  switch (effect.type) {
+    case "offer":
+      return { kicker: `${namesFor(ids)} · Offer`, title: termsFor(effect.offer), color: colorFor(ids[0]) };
+    case "revise":
+      return { kicker: `${namesFor(ids)} · New offer`, title: termsFor(effect.offer), color: colorFor(ids[0]) };
+    case "team":
+      return { kicker: `${namesFor(ids)} · Team offer`, title: termsFor(effect.offer), color: colorFor(ids[0]) };
+    case "counter":
+      return { kicker: `${state.episode.pitch.founder.name} · Counter-offer`, title: termsFor(effect.offer), color: state.episode.pitch.founder.accent };
+    case "out":
+      return { kicker: namesFor(ids), title: "I'm out", color: "#ff6b6b", duration: 2600 };
+    case "deal":
+      return { kicker: `Deal · ${namesFor(ids)}`, title: termsFor(effect.offer), color: "#f6c55b", duration: 0 };
+    case "no_deal":
+      return { kicker: "No deal", title: state.episode.pitch.startupName, color: "#ff6b6b", duration: 0 };
+    default:
+      return null;
+  }
+}
+
+function setCaption(beat) {
+  const role = beat.speakerId === "founder" ? "Founder" : beat.speakerRole;
+  elements.subName.textContent = beat.speakerId === "narrator" ? "Narrator" : `${beat.speakerName} · ${role}`;
+  elements.caption.style.setProperty("--who", beat.speakerId === "narrator" ? "#f6c55b" : colorFor(beat.speakerId));
+  elements.subText.textContent = "";
+  elements.caption.classList.add("is-visible");
+  elements.caption.classList.remove("is-thinking");
+}
+
+// Reveal whole words only, like live captions.
+function setCaptionText(text, full) {
+  elements.caption.classList.remove("is-thinking");
+
+  if (text.length >= full.length) {
+    elements.subText.textContent = full;
+    return;
+  }
+
+  const cut = text.lastIndexOf(" ");
+  elements.subText.textContent = cut > 0 ? text.slice(0, cut) : "";
+}
+
+function showStamp(tone) {
+  window.clearTimeout(timers.stamp);
+  elements.stampLabel.textContent = tone === "deal" ? "Deal!" : "No deal";
+  elements.stamp.dataset.tone = tone;
+  elements.stamp.classList.remove("is-visible");
+  void elements.stamp.offsetWidth;
+  elements.stamp.classList.add("is-visible");
+  timers.stamp = window.setTimeout(() => elements.stamp.classList.remove("is-visible"), 2800);
+}
+
+function renderProgress(index) {
+  const total = state.episode?.beats.length || 0;
+  const done = Math.max(0, Math.min(total, index + 1));
+  elements.progress.setAttribute("aria-valuemax", String(total));
+  elements.progress.setAttribute("aria-valuenow", String(done));
+  elements.progress.setAttribute("aria-valuetext", `Line ${done} of ${total}`);
+  elements.progressFill.style.width = total ? `${(done / total) * 100}%` : "0%";
+}
 
 function renderTransport() {
   const status = state.director?.state.status || "idle";
@@ -333,14 +385,9 @@ function renderTransport() {
   toggle.innerHTML = icon(playing ? "pause" : "play");
   toggle.setAttribute("aria-label", playing ? "Pause" : status === "finished" ? "Show verdict" : "Play");
   elements.body.dataset.playback = status;
-
   elements.speed.innerHTML = SPEEDS.concat(SPEEDS.includes(state.speed) ? [] : [state.speed])
-    .map(
-      (speed) =>
-        `<button type="button" class="speed-option" data-speed="${speed}" aria-pressed="${speed === state.speed}">${speed}×</button>`,
-    )
+    .map((speed) => `<button type="button" data-speed="${speed}" aria-pressed="${speed === state.speed}">${speed}×</button>`)
     .join("");
-
   const voiceButton = elements.transport.querySelector('[data-action="voice"]');
   voiceButton.hidden = !voice?.supported;
   voiceButton.innerHTML = icon(state.voiceOn ? "voiceOn" : "voiceOff");
@@ -348,84 +395,65 @@ function renderTransport() {
   voiceButton.setAttribute("aria-label", state.voiceOn ? "Turn voices off" : "Turn voices on");
 }
 
-function renderProgress(index) {
-  const total = state.episode?.beats.length || 0;
-  const done = Math.max(0, Math.min(total, index + 1));
-  elements.progressFill.style.width = total ? `${(done / total) * 100}%` : "0%";
-  elements.progressLabel.textContent = `Line ${done} of ${total}`;
+function revealControls() {
+  elements.body.classList.add("controls-visible");
+  window.clearTimeout(timers.controls);
+  timers.controls = window.setTimeout(() => elements.body.classList.remove("controls-visible"), 2600);
 }
 
-function renderProgressTicks() {
-  const { beats, phases } = state.episode;
-  const ticks = phases
-    .map((phase) => {
-      const first = beats.findIndex((beat) => beat.phase === phase.id);
-      return first > 0 ? `<i class="progress-tick" style="left:${(first / beats.length) * 100}%" title="${escapeHtml(phase.label)}"></i>` : "";
-    })
-    .join("");
+// --- End slate ---------------------------------------------------------------------
 
-  elements.progressTrack.querySelectorAll(".progress-tick").forEach((tick) => tick.remove());
-  elements.progressTrack.insertAdjacentHTML("beforeend", ticks);
-}
+const DIFFICULTY = { easy: "Easy", medium: "Medium", hard: "Hard" };
 
-function refreshBoard(previous = null) {
-  renderBoard(elements.boardPanel, state.episode, state.board, { thinkingId: state.thinkingId, previous });
+function renderVerdict() {
+  const { result, report, pitch } = state.episode;
+  const isDeal = result.outcome === "deal";
+  const delta = isDeal ? Math.round((result.valuationUsd / result.askValuationUsd - 1) * 100) : 0;
+  let note = "Every shark went out.";
 
-  for (const [sharkId, entry] of Object.entries(state.board.sharks)) {
-    stage.setSharkStatus(sharkId, entry.status, entry);
+  if (isDeal) {
+    note =
+      delta === 0
+        ? "Closed exactly at the asking valuation."
+        : `${Math.abs(delta)}% ${delta < 0 ? "below" : "above"} the asking valuation of ${formatMoneyShort(result.askValuationUsd)}.`;
+  } else if (result.declinedOffer) {
+    note = `${pitch.founder.name} turned down ${formatOfferFull(result.declinedOffer)}.`;
   }
-}
 
-function showStamp(tone) {
-  window.clearTimeout(stampTimer);
-  elements.stampLabel.textContent = tone === "deal" ? "Deal!" : "No deal";
-  elements.stamp.dataset.tone = tone;
-  elements.stamp.classList.remove("is-visible");
-  void elements.stamp.offsetWidth;
-  elements.stamp.classList.add("is-visible");
-  stampTimer = window.setTimeout(() => elements.stamp.classList.remove("is-visible"), 2800);
-}
-
-function celebrateDeal(effect) {
-  const colors = effect.sharkIds
-    .map((id) => state.episode.sharks.find((shark) => shark.id === id)?.color)
-    .filter(Boolean)
-    .concat(["#f6c55b", "#ffffff"]);
-
-  showStamp("deal");
-  confetti.burst({ colors, seed: state.episode.seed, originX: 0.5 });
-  stage.handshake(effect.sharkIds[0]);
-}
-
-function resetShowSurface() {
-  window.clearTimeout(verdictTimer);
-  window.clearTimeout(stampTimer);
-  elements.stamp.classList.remove("is-visible");
-  confetti.stop();
-  voice?.cancel();
-  state.thinkingId = null;
-  state.playedMs = 0;
-  state.clockStartedAt = null;
-  caption.reset();
-  transcript.reset();
-  stage.reset();
-  stage.placeFounder("offstage");
-  state.board = createBoard(state.episode);
-  refreshBoard();
-  renderPhaseRail(elements.phaseRail, state.episode.phases, null);
-  renderProgress(-1);
+  elements.verdict.innerHTML = `
+    <div class="slate" data-outcome="${result.outcome}">
+      <button class="slate-close" type="button" data-action="close-verdict" aria-label="Close verdict">${icon("close")}</button>
+      <span class="slate-stamp">${isDeal ? (result.dealType === "Multi-Shark Deal" ? "Multi-shark deal" : "Deal") : "No deal"}</span>
+      <h2 id="verdict-title">${escapeHtml(result.headline)}</h2>
+      <p class="slate-terms">${isDeal ? escapeHtml(formatOfferFull(result.offer)) : "No deal"}</p>
+      <p class="slate-note">${escapeHtml(note)}</p>
+      <ul class="slate-facts">
+        <li>Feasibility <b>${report.feasibilityPercent}%</b></li>
+        <li>Good business? <b>${report.isGoodBusiness === "yes" ? "Yes" : "No"}</b></li>
+        <li>Difficulty <b>${DIFFICULTY[report.difficulty]}</b></li>
+        <li>To start <b>${formatMoneyShort(report.minimumInitialInvestmentUsd)}</b></li>
+      </ul>
+      <div class="slate-actions">
+        <button class="primary" type="button" data-action="replay">${icon("restart")}Watch again</button>
+        <button type="button" data-action="new-pitch">${icon("next")}Next pitch</button>
+        <button type="button" data-action="download-report">${icon("download")}Download report</button>
+      </div>
+      <div class="slate-links">
+        <button type="button" data-action="copy-link">Copy link</button>
+        <button type="button" data-action="copy-caption">Copy caption</button>
+      </div>
+    </div>`;
 }
 
 function openVerdict() {
-  window.clearTimeout(verdictTimer);
-  renderVerdict(elements.verdict, { episode: state.episode, board: state.board, allTime: state.allTime });
+  window.clearTimeout(timers.verdict);
+  renderVerdict();
 
   if (!elements.verdict.open) {
     elements.verdict.showModal();
   }
 
-  elements.verdict.querySelector('[data-action="download-report"]')?.focus({ preventScroll: true });
-  elements.verdict.querySelector(".verdict-card").scrollTop = 0;
+  elements.verdict.querySelector('[data-action="replay"]')?.focus({ preventScroll: true });
 }
 
 function closeVerdict() {
@@ -434,8 +462,39 @@ function closeVerdict() {
   }
 }
 
+// --- Show --------------------------------------------------------------------------
+
+function resetShow() {
+  for (const key of ["verdict", "stamp", "lowerThird"]) {
+    window.clearTimeout(timers[key]);
+  }
+
+  elements.stamp.classList.remove("is-visible");
+  hideLowerThird();
+  confetti.stop();
+  voice?.cancel();
+  state.playedMs = 0;
+  state.clockStartedAt = null;
+  elements.caption.classList.remove("is-visible", "is-thinking");
+  elements.transcript.innerHTML = "";
+  studio.reset();
+  studio.setPitch(stagePitch(state.episode.pitch));
+  studio.placeFounder("offstage");
+  state.board = createBoard(state.episode);
+  renderProgress(-1);
+}
+
+function applyStatuses(previous) {
+  for (const [sharkId, entry] of Object.entries(state.board.sharks)) {
+    if (!previous || previous.sharks[sharkId].status !== entry.status) {
+      studio.setSharkStatus(sharkId, entry.status, entry);
+    }
+  }
+}
+
 function buildDirector() {
   state.director?.destroy();
+  let pitchIntroShown = false;
 
   state.director = createDirector({
     beats: state.episode.beats,
@@ -446,70 +505,88 @@ function buildDirector() {
         renderTransport();
       },
       onBeatStart(beat, { index, timing, silent }) {
-        renderPhaseRail(elements.phaseRail, state.episode.phases, beat.phase);
         renderProgress(index - 1);
-        transcript.start(beat, state.episode);
 
         if (silent) {
           return;
         }
 
-        const shot = stage.shotForBeat(beat);
-        stage.setShot(shot.name, shot.focus);
-        caption.setBeat(beat, state.episode);
+        if (lowerThirdUntil?.(beat)) {
+          hideLowerThird();
+        }
+
+        const shot = studio.shotForBeat(beat);
+        studio.setShot(shot.name, shot.focus, shot.variant);
+        setCaption(beat);
 
         if (beat.kind === "entrance") {
-          stage.setSpeaker(null);
-          stage.walkTo("mark", timing.preMs);
+          studio.setSpeaker(null);
+          studio.walkTo("mark", timing.preMs);
         } else if (timing.thinks) {
-          stage.setSpeaker(beat.speakerId, { phase: "thinking", lookAt: beat.targetId });
-          caption.setThinking(beat);
-          state.thinkingId = beat.speakerId;
-          refreshBoard();
+          studio.setSpeaker(beat.speakerId, { phase: "thinking", lookAt: beat.targetId });
+          elements.caption.classList.add("is-thinking");
+          elements.subText.textContent = "…";
         } else {
-          stage.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
+          studio.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
+        }
+
+        if (beat.kind === "pitch" && !pitchIntroShown) {
+          pitchIntroShown = true;
+          const { pitch } = state.episode;
+          showLowerThird({
+            kicker: `${pitch.startupName} · ${pitch.founder.name}, founder`,
+            title: `Seeking ${formatMoneyFull(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}`,
+            color: pitch.founder.accent,
+            duration: 0,
+            until: (next) => next.kind !== "pitch",
+          });
         }
 
         if (beat.kind === "verdict" && state.episode.result.outcome !== "deal") {
-          stage.walkTo("offstage", 2600);
+          studio.walkTo("offstage", 2600);
         }
       },
       onTypingStart(beat) {
-        if (state.thinkingId) {
-          state.thinkingId = null;
-          refreshBoard();
-        }
-
-        stage.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
-        caption.setText("");
+        studio.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
       },
       onType(beat, text) {
-        caption.setText(text);
-        transcript.update(text);
+        setCaptionText(text, beat.text || "");
       },
       onLanded(beat, { silent }) {
         const previous = state.board;
         state.board = applyBeat(state.board, beat);
-        state.thinkingId = null;
-        refreshBoard(previous);
-        caption.land(beat);
-        transcript.land(beat);
+        applyStatuses(previous);
+        const item = document.createElement("li");
+        item.textContent = `${beat.speakerName}: ${beat.text}`;
+        elements.transcript.append(item);
+
         if (silent) {
           return;
         }
 
-        announce(`${beat.speakerName}: ${beat.text}`);
+        elements.subText.textContent = beat.text;
+        elements.announcer.textContent = `${beat.speakerName}: ${beat.text}`;
 
         for (const effect of beat.effects) {
+          const graphic = graphicForEffect(effect);
+
+          if (graphic) {
+            const isFinal = effect.type === "deal" || effect.type === "no_deal";
+            showLowerThird({ ...graphic, duration: isFinal ? 0 : 6000, until: isFinal ? null : () => true });
+          }
+
           if (effect.type === "deal") {
-            celebrateDeal(effect);
+            showStamp("deal");
+            const colors = effect.sharkIds.map(colorFor).concat(["#f6c55b", "#ffffff"]);
+            confetti.burst({ colors, seed: state.episode.seed, originX: 0.5 });
+            studio.handshake(effect.sharkIds[0]);
           } else if (effect.type === "no_deal") {
             showStamp("no-deal");
           }
         }
       },
       onBeatEnd() {
-        stage.setSpeaker(null);
+        studio.setSpeaker(null);
       },
       onSpeak(beat, speed) {
         return state.voiceOn ? voice?.speak(beat.speakerId, beat.text, speed) : null;
@@ -526,9 +603,8 @@ function buildDirector() {
       },
       onFinish() {
         renderProgress(state.episode.beats.length - 1);
-        renderPhaseRail(elements.phaseRail, state.episode.phases, "verdict");
-        stage.setSpeaker(null);
-        verdictTimer = window.setTimeout(openVerdict, 900);
+        studio.setSpeaker(null);
+        timers.verdict = window.setTimeout(openVerdict, 1400);
       },
     },
   });
@@ -536,44 +612,12 @@ function buildDirector() {
   renderTransport();
 }
 
-function renderDossier() {
-  const { pitch } = state.episode;
-  const { metrics } = pitch;
-  const stats = [
-    ["Asking valuation", formatMoneyShort(pitch.valuationUsd), ""],
-    ["Sales, last 12 mo", metrics.revenueTtmUsd ? formatMoneyShort(metrics.revenueTtmUsd) : "None yet", ""],
-    ["Growth", `${metrics.growthMoMPct}%`, "month over month"],
-    ["Gross margin", `${metrics.grossMarginPct}%`, metrics.priceLabel],
-    ["Customers", metrics.customers.toLocaleString("en-US"), metrics.customerNoun],
-    ["Acquire → lifetime", `${formatMoneyShort(metrics.cacUsd)} → ${formatMoneyShort(metrics.ltvUsd)}`, `${(metrics.ltvUsd / metrics.cacUsd).toFixed(1)}× return`],
-  ];
-
-  elements.dossier.style.setProperty("--accent", pitch.founder.accent);
-  elements.dossier.innerHTML = `
-    <header class="dossier-head">
-      <span class="pitch-icon">${icon(pitch.icon)}</span>
-      <div>
-        <span class="kicker">Pitch dossier</span>
-        <strong>${escapeHtml(pitch.productName)}</strong>
-        <span class="dossier-by">${escapeHtml(pitch.startupName)} · ${escapeHtml(pitch.categoryLabel)} · Founder ${escapeHtml(pitch.founder.name)}</span>
-      </div>
-      <p>${escapeHtml(pitch.tagline)}</p>
-    </header>
-    <dl class="dossier-stats">
-      ${stats.map(([label, value, note]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd>${note ? `<small>${escapeHtml(note)}</small>` : ""}</div>`).join("")}
-    </dl>`;
-}
-
 function playEpisode() {
   closeVerdict();
-  resetShowSurface();
-  stage.setPitch(state.episode.pitch);
-  stage.placeFounder("offstage");
-  elements.hudSeed.textContent = `Seed ${state.episode.seed}`;
-  renderDossier();
-  renderProgressTicks();
+  resetShow();
   buildDirector();
   state.director.play();
+  revealControls();
 }
 
 async function rollCameras() {
@@ -609,7 +653,6 @@ async function rollCameras() {
 
     state.episode = payload.episode;
     state.download = payload.download;
-    state.allTime = payload.allTime;
     setView("show");
     syncUrl();
     playEpisode();
@@ -626,9 +669,10 @@ function backToLobby() {
   state.director = null;
   voice?.cancel();
   confetti.stop();
-  window.clearTimeout(verdictTimer);
-  caption.reset();
-  stage.reset();
+  hideLowerThird();
+  window.clearTimeout(timers.verdict);
+  elements.caption.classList.remove("is-visible");
+  studio.reset();
   state.episode = null;
   state.playedMs = 0;
   state.clockStartedAt = null;
@@ -654,18 +698,7 @@ function downloadReport() {
   showToast(`Downloaded ${state.download.fileName}`);
 }
 
-function setTab(tabName) {
-  for (const tab of elements.tabs) {
-    const selected = tab.dataset.tab === tabName;
-    tab.setAttribute("aria-selected", String(selected));
-    tab.tabIndex = selected ? 0 : -1;
-  }
-
-  elements.boardPanel.hidden = tabName !== "board";
-  elements.transcriptPanel.hidden = tabName !== "transcript";
-}
-
-// --- Events --------------------------------------------------------------------
+// --- Events ------------------------------------------------------------------------
 
 function handleTransportAction(action) {
   const director = state.director;
@@ -696,7 +729,7 @@ function handleTransportAction(action) {
       }
 
       renderTransport();
-      showToast(state.voiceOn ? "Voices on (uses your browser's built-in speech)" : "Voices off");
+      showToast(state.voiceOn ? "Voices on (your browser's built-in speech)" : "Voices off");
       break;
     case "exit":
       backToLobby();
@@ -724,6 +757,10 @@ function bindEvents() {
     }
   });
 
+  for (const type of ["pointermove", "pointerdown", "touchstart"]) {
+    window.addEventListener(type, () => state.view === "show" && revealControls(), { passive: true });
+  }
+
   elements.pitchList.addEventListener("click", (event) => {
     const card = event.target.closest("[data-pitch]");
 
@@ -748,7 +785,7 @@ function bindEvents() {
   elements.ideaInput.addEventListener("input", () => {
     state.selection.idea = elements.ideaInput.value.trim();
     updateCharCount();
-    renderPitchList();
+    renderLineup();
     previewSelection();
     hideLobbyError();
   });
@@ -765,30 +802,17 @@ function bindEvents() {
 
     if (seed !== null) {
       state.selection.seed = seed;
-      renderHero();
     }
   });
 
   elements.seedDice.addEventListener("click", () => {
     elements.seedInput.value = String(1 + Math.floor(Math.random() * 9999));
     state.selection.seed = Number(elements.seedInput.value);
-    renderHero();
   });
 
   elements.rollButton.addEventListener("click", () => {
     void rollCameras();
   });
-
-  for (const tab of elements.tabs) {
-    tab.addEventListener("click", () => setTab(tab.dataset.tab));
-    tab.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        const next = tab.dataset.tab === "board" ? "transcript" : "board";
-        setTab(next);
-        document.querySelector(`[data-tab="${next}"]`).focus();
-      }
-    });
-  }
 
   elements.verdict.addEventListener("click", (event) => {
     if (event.target === elements.verdict) {
@@ -796,9 +820,7 @@ function bindEvents() {
       return;
     }
 
-    const action = event.target.closest("[data-action]")?.dataset.action;
-
-    switch (action) {
+    switch (event.target.closest("[data-action]")?.dataset.action) {
       case "close-verdict":
         closeVerdict();
         break;
@@ -827,16 +849,18 @@ function bindEvents() {
       return;
     }
 
-    if (event.target.closest?.("input, textarea, select, button, [role='tab']") && event.key === " ") {
+    if (event.key === " " && event.target.closest?.("button, input, textarea")) {
       return;
     }
+
+    revealControls();
 
     if (event.key === " ") {
       event.preventDefault();
       handleTransportAction("toggle");
     } else if (event.key === "ArrowRight" && event.shiftKey) {
       handleTransportAction("finish");
-    } else if (event.key === "ArrowRight" && !event.target.closest?.("[role='tab']")) {
+    } else if (event.key === "ArrowRight") {
       handleTransportAction("next");
     } else if (event.key.toLowerCase() === "r" && !event.metaKey && !event.ctrlKey) {
       handleTransportAction("restart");
@@ -844,30 +868,19 @@ function bindEvents() {
   });
 }
 
-// --- Boot ----------------------------------------------------------------------
+// --- Boot --------------------------------------------------------------------------
 
 function renderStaticLabels() {
-  const actions = {
-    restart: icon("restart"),
-    toggle: icon("play"),
-    next: icon("next"),
-    finish: icon("verdict"),
-  };
-
-  for (const [action, markup] of Object.entries(actions)) {
-    elements.transport.querySelector(`[data-action="${action}"]`).innerHTML = markup;
+  for (const [action, name] of Object.entries({ restart: "restart", toggle: "play", next: "next", finish: "verdict", exit: "exit" })) {
+    elements.transport.querySelector(`[data-action="${action}"]`).innerHTML = icon(name);
   }
 
-  elements.transport.querySelector('[data-action="exit"]').innerHTML = `${icon("exit")}<span>Lobby</span>`;
   elements.seedDice.innerHTML = icon("dice");
-  document.querySelector("#tab-board").innerHTML = `${icon("board")}<span>Deal board</span>`;
-  document.querySelector("#tab-transcript").innerHTML = `${icon("transcript")}<span>Transcript</span>`;
   setRollLoading(false);
 }
 
 async function boot() {
   renderStaticLabels();
-
   const response = await fetch("/api/config");
 
   if (!response.ok) {
@@ -875,15 +888,15 @@ async function boot() {
   }
 
   state.config = await response.json();
-  elements.providerLabel.textContent = `${state.config.provider.label} · no API keys`;
+  // Canvas textures (the sign and product board) need the display font.
+  await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 1500))]);
+  studio = createStudio({ mount: elements.stage });
+  studio.setSharks(state.config.sharks);
   voice = createVoice({ sharks: state.config.sharks });
-  stage.setSharks(state.config.sharks);
-  renderMeet();
 
   const url = readUrl();
   state.speed = url.speed ?? 1;
   state.voiceOn = Boolean(voice.supported && recall("voice", false));
-
   const knownPitch = state.config.pitches.some((pitch) => pitch.id === url.pitchId);
   state.selection.pitchId = knownPitch ? url.pitchId : state.config.pitches[0].id;
   state.selection.seed = Number.isInteger(url.seed) && url.seed >= 1 ? Math.min(url.seed, state.config.limits.maxSeed) : state.config.defaults.seed;
@@ -893,10 +906,11 @@ async function boot() {
   if (url.idea) {
     elements.ideaInput.value = url.idea.slice(0, state.config.limits.ideaMaxLength);
     state.selection.idea = elements.ideaInput.value.trim();
+    elements.ownIdea.open = true;
   }
 
   updateCharCount();
-  renderPitchList();
+  renderLineup();
   previewSelection();
   renderTransport();
   bindEvents();
@@ -910,6 +924,5 @@ async function boot() {
 
 boot().catch((error) => {
   console.error(error);
-  elements.body.classList.add("is-ready");
   showLobbyError("The studio is offline. Is the server running?");
 });

@@ -11,7 +11,7 @@ export function beatTiming(beat) {
   let preMs = 260;
 
   if (beat.kind === "entrance") {
-    preMs = 2200;
+    preMs = 3400;
   } else if (THINKING_KINDS.has(beat.kind)) {
     preMs = beat.kind === "offer" || beat.kind === "out" ? 1100 : 700;
   } else if (beat.kind === "verdict") {

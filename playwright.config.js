@@ -14,6 +14,8 @@ export default defineConfig({
     timeout: 15_000,
   },
   fullyParallel: true,
+  // Software WebGL is CPU-bound; a few workers keep runs fast without starving each other.
+  workers: 3,
   retries: 0,
   reporter: [["list"]],
   use: {
@@ -34,7 +36,12 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        // Software WebGL so the 3D studio renders in headless runs.
+        launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] },
+      },
     },
   ],
 });
