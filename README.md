@@ -31,7 +31,7 @@ The sharks' looks nod to the real panel, but their on-air names stay fictional b
 | Luna | The Visionary | The rigged Blender model of Lori Greiner: blonde side-parted waves, black one-shoulder top |
 | Max | The Numbers Shark | Shaved head, trimmed beard, navy suit, gold tie |
 | Vera | The Brand Guru | The rigged Blender model of Barbara Corcoran: blonde pixie cut, red dress, pearls |
-| Wild Wes | The Wildcard | The rigged Blender model of Mark Cuban: short dark hair, navy blazer, open collar, dark jeans (loads once `public/models/mark/mark-rigged.glb` is in the repo) |
+| Wild Wes | The Wildcard | The rigged Blender model of Mark Cuban: short dark hair, navy blazer, open collar, dark jeans |
 
 Rex, Luna, Vera, and Wild Wes use `public/models/<kevin|lori|barbara|mark>/<name>-rigged.glb`. They share an 18-bone contract plus `mouthOpen`, `blink`, `smile`, and `frown` morphs (see `assets/kevin/RIGGING.md` and each model's docs). `public/js/studio/skin.js` drives them from the same procedural joint rig as Max, so they sit, gesture, cross their arms when they're out, turn to whoever is talking, talk, blink, and stand for the handshake. Any shark whose look names a `model` loads `/models/<model>/<model>-rigged.glb` the same way. In light mode (software WebGL), or if a model file is missing, that shark uses a procedural stand-in. Max is procedural.
 
