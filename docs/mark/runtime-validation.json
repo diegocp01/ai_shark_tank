@@ -1,0 +1,26 @@
+{
+  "reimported_glb": true,
+  "bytes": 9324908,
+  "bones": 18,
+  "morphs": {
+    "blink": {
+      "affected_vertices": 300,
+      "maximum_displacement_m": 0.00968934831539773
+    },
+    "frown": {
+      "affected_vertices": 912,
+      "maximum_displacement_m": 0.0073553813392665795
+    },
+    "mouthOpen": {
+      "affected_vertices": 1215,
+      "maximum_displacement_m": 0.03293396167673469
+    },
+    "smile": {
+      "affected_vertices": 1263,
+      "maximum_displacement_m": 0.005002474059831007
+    }
+  },
+  "neutral_jaw": true,
+  "head_turn_degrees_tested": 30,
+  "rig_children": 34
+}
