@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createRetarget } from "./skin.js";
-import { outfitTexture, shadeHex } from "./textures.js";
+import { outfitTexture, shadeHex, surfaceTexture } from "./textures.js";
 
 const HEAD_R = 0.122;
 // Hair and beard pieces are spheres of HEAD_R scaled to the sculpted head.
@@ -462,6 +462,7 @@ function buildFace(head, look, materials) {
       rotation: [-0.62, 0, 0],
       shadow: false,
     });
+    eye.scale.set(0.88, 0.7, 1);
     eyes.push(iris);
     lids.push(lid);
   }
@@ -478,7 +479,7 @@ function buildFace(head, look, materials) {
 
   for (const side of [1, -1]) {
     const browY = 0.054 + lift * (side === 1 || look.brows !== "raised" ? 1 : -0.6);
-    const brow = addMesh(head, new THREE.CapsuleGeometry(0.0068, 0.032, 6, 12), materials.brow, {
+    const brow = addMesh(head, new THREE.CapsuleGeometry(0.0034, 0.032, 6, 12), materials.brow, {
       position: [side * 0.04, browY, faceZ(browY, side * 0.04) + 0.003],
       rotation: [0, side * 0.42, Math.PI / 2 + side * tilt],
       shadow: false,
@@ -634,7 +635,7 @@ function buildLeg(hip, materials) {
     addMesh(foot, new RoundedBoxGeometry(0.1, 0.022, 0.27, 2, 0.008), materials.sole, { position: [0, -0.046, 0.045] });
   }
 
-  return { knee };
+  return { knee, foot };
 }
 
 export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, pose = "stand" }) {
@@ -682,6 +683,10 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     heel: dress,
   };
 
+  const fabric = surfaceTexture("fabric");
+  for (const name of ["jacket", "sleeve", "trousers"]) {
+    materials[name].bumpMap = fabric; materials[name].bumpScale = 0.0009;
+  }
   const root = new THREE.Group();
   const pelvis = group(root, [0, POSES[pose].pelvisY, 0]);
   addMesh(pelvis, new THREE.CapsuleGeometry(0.11, 0.13, 8, 18), materials.trousers, {
@@ -704,13 +709,17 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
   }
 
   const neck = group(spine, [0, 0.47, 0]);
-  addMesh(neck, new THREE.CylinderGeometry(0.047, 0.054, 0.12, 20), materials.skinShade, { position: [0, 0.05, 0.004] });
-  const head = group(neck, [0, 0.19, 0.014]);
-  head.scale.setScalar(1.02);
+  // A flared neck root seats into the shoulders; the skull pivots at its base.
+  const neckProfile = [[0.064, -0.018], [0.056, 0.012], [0.047, 0.045], [0.045, 0.08], [0.05, 0.113]];
+  addMesh(neck, new THREE.LatheGeometry(neckProfile.map(([r, y]) => new THREE.Vector2(r, y)), 32), materials.skin, { scale: [1, 1, 0.88] });
+  const headPivot = group(neck, [0, 0.105, 0]);
+  const head = group(headPivot, [0, 0.073, 0.014]);
+  head.scale.setScalar(0.97);
   const face = buildFace(head, look, materials);
   buildHair(head, look, look.hairStyle === "shaved" ? materials.stubble : materials.hair);
 
   const limbs = {};
+  const feet = [];
 
   for (const [name, side] of [["L", 1], ["R", -1]]) {
     const shoulder = group(spine, [side * 0.2, 0.42, -0.006]);
@@ -723,9 +732,12 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     const leg = buildLeg(hip, materials);
     limbs[`hip${name}`] = hip;
     limbs[`knee${name}`] = leg.knee;
+    leg.foot.name = `actor-foot${name}`;
+    feet.push(leg.foot);
   }
 
   const joints = { spine, neck, ...limbs };
+  for (const [name, node] of Object.entries({ pelvis, head: headPivot, skull: head, ...joints })) node.name = `actor-${name}`;
   let skin = null;
   const current = {};
   let target = POSES[pose];
@@ -739,7 +751,11 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     thinking: false,
     walking: false,
     walkPhase: 0,
-    gesture: 0.7 + random() * 0.4,
+    walkSpeed: 1.2,
+    walkBlend: 0,
+    speechBlend: 0,
+    thoughtBlend: 0,
+    gesture: 0.35 + random() * 0.25,
     phase: random() * Math.PI * 2,
     nextBlink: 1 + random() * 3,
     blinkUntil: 0,
@@ -776,6 +792,9 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
     setWalking(on) {
       state.walking = on;
     },
+    setWalkSpeed(speed) {
+      state.walkSpeed = Math.max(0, Math.min(3, speed));
+    },
     setHandshake(on) {
       state.handshake = on ? 1 : 0;
     },
@@ -791,10 +810,10 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       const procedural = [];
       root.traverse((node) => node.isMesh && procedural.push(node));
       // Bind with the joints at rest so the model's rest pose lines up.
-      const saved = Object.entries({ pelvis, head, ...joints }).map(([name, node]) => [node, node.rotation.clone()]);
+      const saved = Object.entries({ pelvis, head: headPivot, ...joints }).map(([name, node]) => [node, node.rotation.clone()]);
       saved.forEach(([node]) => node.rotation.set(0, 0, 0));
       root.add(model);
-      skin = createRetarget(model, { root, joints: { pelvis, head, ...joints }, skinTone: look.skin });
+      skin = createRetarget(model, { root, joints: { pelvis, head: headPivot, ...joints }, skinTone: look.skin });
       saved.forEach(([node, rotation]) => node.rotation.copy(rotation));
       procedural.forEach((mesh) => {
         mesh.visible = false;
@@ -804,6 +823,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       return head.getWorldPosition(out);
     },
     update(dt, time) {
+      dt = Math.max(0, Math.min(dt, 0.1));
       const blend = 1 - Math.exp(-dt * 6);
 
       for (const [name, value] of Object.entries(target)) {
@@ -818,37 +838,52 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
 
       state.reach += (state.handshake - state.reach) * blend;
       const t = time + state.phase;
-      const talking = state.speaking ? 1 : 0;
-      const gesture = talking * state.gesture * (0.5 + 0.5 * Math.sin(t * 2.3));
-      const gestureL = talking * state.gesture * (0.5 + 0.5 * Math.sin(t * 1.7 + 1.3)) * 0.6;
-      const breath = Math.sin(t * 1.6) * 0.012;
+      state.speechBlend += ((state.speaking ? 1 : 0) - state.speechBlend) * blend;
+      state.thoughtBlend += ((state.thinking ? 1 : 0) - state.thoughtBlend) * blend;
+      state.walkBlend += ((state.walking ? 1 : 0) - state.walkBlend) * blend;
+      const talking = state.speechBlend;
+      // Short gesture phrases separated by rests, rather than continuous waving.
+      const phrase = smoothstep(-0.25, 0.65, Math.sin(t * 0.9 + Math.sin(t * 0.31)));
+      const gesture = talking * phrase * state.gesture * (0.5 + 0.5 * Math.sin(t * 2.3));
+      const gestureL = talking * (1 - phrase * 0.65) * state.gesture * (0.5 + 0.5 * Math.sin(t * 1.7 + 1.3)) * 0.6;
+      const breath = Math.sin(t * 1.35) * 0.006;
 
       let walkHip = 0;
       let walkKnee = 0;
       let walkArm = 0;
       let bob = 0;
 
-      if (state.walking) {
-        state.walkPhase += dt * 7.4;
-        walkHip = Math.sin(state.walkPhase) * 0.42;
-        walkKnee = Math.max(0, Math.sin(state.walkPhase + 1.1)) * 0.75;
-        walkArm = Math.sin(state.walkPhase) * 0.32;
-        bob = Math.abs(Math.cos(state.walkPhase)) * 0.025;
+      const stride = state.walkBlend;
+      if (stride > 0.001) {
+        state.walkPhase += dt * state.walkSpeed * Math.PI * 2 / 1.15;
+        walkHip = Math.cos(state.walkPhase) * 0.36 * stride;
+        walkKnee = Math.max(0, Math.sin(state.walkPhase)) * 0.62 * stride;
+        walkArm = Math.cos(state.walkPhase) * 0.23 * stride;
+        bob = (1 - Math.cos(state.walkPhase * 2)) * 0.006 * stride;
       }
 
       pelvis.position.y = current.pelvisY + bob;
-      apply("spine", current.spine, [breath + (state.walking ? 0.04 : 0), 0, 0]);
+      apply("spine", current.spine, [breath + stride * 0.025, Math.sin(state.walkPhase) * 0.018 * stride, Math.sin(t * 0.65) * 0.004 * (1 - stride)]);
       apply("neck", current.neck);
       apply("hipL", current.hipL, [walkHip, 0, 0]);
       apply("kneeL", current.kneeL, [walkKnee, 0, 0]);
       apply("hipR", current.hipR, [-walkHip, 0, 0]);
-      apply("kneeR", current.kneeR, [state.walking ? Math.max(0, Math.sin(state.walkPhase + 1.1 + Math.PI)) * 0.75 : 0, 0, 0]);
+      apply("kneeR", current.kneeR, [Math.max(0, Math.sin(state.walkPhase + Math.PI)) * 0.62 * stride, 0, 0]);
+
+      // Keep the supporting shoe on the floor instead of bouncing both feet
+      // above it. Only apply while standing; seated feet retain their pose.
+      if (stride > 0.001 && current.pelvisY > 0.85) {
+        root.updateMatrixWorld(true);
+        const lowestAnkle = Math.min(...feet.map(foot => root.worldToLocal(foot.getWorldPosition(scratch)).y));
+        const correction = Math.max(-0.08, Math.min(0.08, 0.06 - lowestAnkle));
+        pelvis.position.y += correction * stride;
+      }
 
       // Right arm: talk gestures, hand-to-chin while thinking, or a handshake reach.
-      const think = state.thinking ? 1 : 0;
+      const think = state.thoughtBlend;
       const reach = state.reach;
       const right = [
-        current.shoulderR[0] - gesture * 0.42 - walkArm,
+        current.shoulderR[0] - gesture * 0.42 + walkArm,
         current.shoulderR[1],
         current.shoulderR[2],
       ];
@@ -867,7 +902,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
 
       joints.shoulderR.rotation.set(right[0], right[1], right[2]);
       joints.elbowR.rotation.set(rightElbow[0], rightElbow[1], rightElbow[2]);
-      apply("shoulderL", current.shoulderL, [-gestureL * 0.32 + walkArm, 0, 0]);
+      apply("shoulderL", current.shoulderL, [-gestureL * 0.32 - walkArm, 0, 0]);
       apply("elbowL", current.elbowL, [-gestureL * 0.4, 0, 0]);
 
       // Gaze: the head turns toward the look target, the eyes go a bit further.
@@ -877,18 +912,22 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       if (state.lookTarget) {
         head.getWorldPosition(scratch);
         const direction = state.lookTarget.clone().sub(scratch);
-        root.getWorldQuaternion(scratchQuat);
+        neck.getWorldQuaternion(scratchQuat);
         direction.applyQuaternion(scratchQuat.invert());
         yaw = Math.atan2(direction.x, direction.z);
         pitch = Math.atan2(direction.y, Math.hypot(direction.x, direction.z));
       }
 
-      yaw = Math.max(-1.1, Math.min(1.1, yaw));
+      yaw = Math.max(-0.95, Math.min(0.95, yaw));
       pitch = Math.max(-0.45, Math.min(0.45, pitch));
       state.headYaw += (yaw * 0.78 - state.headYaw) * (1 - Math.exp(-dt * 5));
       state.headPitch += (pitch * 0.6 - state.headPitch) * (1 - Math.exp(-dt * 5));
-      const nod = talking * Math.sin(t * 6.3) * 0.03;
-      head.rotation.set(-state.headPitch - nod - think * 0.12, state.headYaw, think * 0.12 + Math.sin(t * 0.7) * 0.02);
+      const nod = talking * phrase * Math.sin(t * 2.8) * 0.018;
+      // Share gaze across the cervical chain. Large skull-only turns pinch the
+      // skin at the jaw and make the head appear detached from the shoulders.
+      neck.rotation.x -= state.headPitch * 0.35;
+      neck.rotation.y += state.headYaw * 0.6;
+      headPivot.rotation.set(-state.headPitch * 0.65 - nod - think * 0.045, state.headYaw * 0.4, think * 0.035 + Math.sin(t * 0.7) * 0.008);
 
       for (const eye of face.eyes) {
         eye.rotation.set(-(pitch - state.headPitch) * 0.7 - think * 0.35, (yaw - state.headYaw) * 0.6, 0);
@@ -903,14 +942,14 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       const lidAngle = time < state.blinkUntil ? 1.05 : lidOpen;
 
       for (const lid of face.lids) {
-        lid.rotation.x += (lidAngle - lid.rotation.x) * (time < state.blinkUntil ? 0.7 : 0.35);
+        lid.rotation.x += (lidAngle - lid.rotation.x) * (1 - Math.exp(-dt * (time < state.blinkUntil ? 55 : 22)));
       }
 
       face.idleMouth.visible = !state.speaking;
       face.talkMouth.visible = state.speaking;
 
       if (state.speaking) {
-        face.talkMouth.scale.y = 0.28 + 0.85 * Math.abs(Math.sin(t * 10.5 + Math.sin(t * 3.3) * 2.2));
+        face.talkMouth.scale.y = 0.12 + 0.38 * Math.abs(Math.sin(t * 10.5 + Math.sin(t * 3.3) * 2.2));
       }
 
       for (const brow of face.brows) {

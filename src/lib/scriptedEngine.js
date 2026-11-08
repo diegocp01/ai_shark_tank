@@ -764,7 +764,11 @@ function buildSocialCaption(pitch, result) {
 
 export function createEpisode({ pitchId, idea, seed } = {}) {
   const normalizedSeed = normalizeSeed(seed);
-  const pitch = resolvePitch({ pitchId, idea, seed: normalizedSeed });
+  return createEpisodeFromPitch(resolvePitch({ pitchId, idea, seed: normalizedSeed }), normalizedSeed);
+}
+
+export function createEpisodeFromPitch(pitch, seed = DEFAULT_SEED) {
+  const normalizedSeed = normalizeSeed(seed);
   const rng = createRng("episode", pitch.id, normalizedSeed);
   const lineRng = rng.fork("lines");
   const factors = computeFactors(pitch);

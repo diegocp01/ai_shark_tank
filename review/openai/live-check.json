@@ -1,0 +1,51 @@
+{
+  "pitch": {
+    "model": "gpt-6.1-sol",
+    "requestedTier": "ultrafast",
+    "servedTier": "ultrafast",
+    "reasoning": "medium"
+  },
+  "deck": {
+    "model": "gpt-6.1-sol",
+    "requestedTier": "ultrafast",
+    "servedTier": "ultrafast",
+    "reasoning": "medium"
+  },
+  "voices": [
+    {
+      "speaker": "narrator",
+      "voice": "cedar",
+      "bytes": 75264
+    },
+    {
+      "speaker": "founder",
+      "voice": "coral",
+      "bytes": 86400
+    },
+    {
+      "speaker": "rex",
+      "voice": "onyx",
+      "bytes": 69888
+    },
+    {
+      "speaker": "luna",
+      "voice": "marin",
+      "bytes": 73728
+    },
+    {
+      "speaker": "max",
+      "voice": "ash",
+      "bytes": 81792
+    },
+    {
+      "speaker": "vera",
+      "voice": "sage",
+      "bytes": 79488
+    },
+    {
+      "speaker": "wes",
+      "voice": "echo",
+      "bytes": 76032
+    }
+  ]
+}

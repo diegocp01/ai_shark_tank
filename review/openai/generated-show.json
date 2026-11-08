@@ -1,0 +1,766 @@
+{
+  "episode": {
+    "schemaVersion": 2,
+    "id": "idea-uggrdjx0-s1-3afb840b",
+    "seed": 1,
+    "provider": "openai-pitch",
+    "title": "Can NextHome Survive the Tank?",
+    "phases": [
+      {
+        "id": "intro",
+        "label": "Cold open"
+      },
+      {
+        "id": "pitch",
+        "label": "Pitch"
+      },
+      {
+        "id": "grill",
+        "label": "Q&A"
+      },
+      {
+        "id": "offers",
+        "label": "Offers"
+      },
+      {
+        "id": "negotiation",
+        "label": "Negotiation"
+      },
+      {
+        "id": "verdict",
+        "label": "Verdict"
+      }
+    ],
+    "pitch": {
+      "id": "idea-uggrdjx0",
+      "custom": true,
+      "idea": "ClosetLift: No-drill storage towers for apartment renters, installed and moved to their next home",
+      "startupName": "ClosetLift",
+      "productName": "LiftTower",
+      "tagline": "More storage. No holes. Moves with you.",
+      "category": "consumer",
+      "categoryLabel": "Consumer brand",
+      "icon": "spark",
+      "askUsd": 150000,
+      "equityPct": 12,
+      "valuationUsd": 1250000,
+      "metrics": {
+        "revenueTtmUsd": 449400,
+        "growthMoMPct": 8,
+        "priceUsd": 749,
+        "priceLabel": "One adjustable storage tower, delivered and installed",
+        "unitCostUsd": 365,
+        "recurring": false,
+        "customers": 600,
+        "customerNoun": "renter households",
+        "cacUsd": 92,
+        "ltvUsd": 384,
+        "grossMarginPct": 51
+      },
+      "founder": {
+        "name": "Sam",
+        "style": "balanced",
+        "suit": "#5a4636",
+        "accent": "#ff6b57",
+        "skin": "#f6d4bb",
+        "hair": "#6a4a33",
+        "hairStyle": "bob"
+      }
+    },
+    "sharks": [
+      {
+        "id": "rex",
+        "displayName": "Rex",
+        "fullName": "Rex The Skeptic",
+        "persona": "The Skeptic",
+        "style": "Pokes holes in every assumption, pressures the founder on execution risk, and speaks like a brutal operator.",
+        "color": "#ff6b57",
+        "accent": "#ffd6cf",
+        "icon": "RX",
+        "look": {
+          "top": "suit",
+          "suit": "#15171c",
+          "tie": "#1d1f24",
+          "skin": "#dca587",
+          "hair": "#b9b6ae",
+          "hairStyle": "bald",
+          "brows": "flat",
+          "mouth": "neutral",
+          "glasses": "round",
+          "model": "kevin"
+        },
+        "voice": {
+          "pitch": 0.7,
+          "rate": 0.98
+        }
+      },
+      {
+        "id": "luna",
+        "displayName": "Luna",
+        "fullName": "Luna The Visionary",
+        "persona": "The Visionary",
+        "style": "Obsessed with category creation, future culture shifts, and bold moonshot potential.",
+        "color": "#7ce8c8",
+        "accent": "#dffff6",
+        "icon": "LU",
+        "look": {
+          "top": "dress",
+          "suit": "#1b1a1e",
+          "skin": "#e6b08f",
+          "hair": "#d4b889",
+          "hairStyle": "long-straight",
+          "brows": "soft",
+          "mouth": "lipstick",
+          "lipstick": "#d2546b",
+          "lashes": true,
+          "model": "lori"
+        },
+        "voice": {
+          "pitch": 1.2,
+          "rate": 1.02
+        }
+      },
+      {
+        "id": "max",
+        "displayName": "Max",
+        "fullName": "Max The Numbers Shark",
+        "persona": "The Numbers Shark",
+        "style": "Lives inside margins, CAC, LTV, payback periods, and ruthless revenue logic.",
+        "color": "#f5c453",
+        "accent": "#fff0bf",
+        "icon": "MX",
+        "look": {
+          "top": "suit",
+          "suit": "#1f2a44",
+          "skin": "#5e3b28",
+          "hair": "#141012",
+          "hairStyle": "shaved",
+          "brows": "flat",
+          "mouth": "neutral",
+          "beard": "full"
+        },
+        "voice": {
+          "pitch": 0.9,
+          "rate": 1.08
+        }
+      },
+      {
+        "id": "vera",
+        "displayName": "Vera",
+        "fullName": "Vera The Brand Guru",
+        "persona": "The Brand Guru",
+        "style": "Thinks in story, taste, social proof, and whether a brand can become iconic.",
+        "color": "#ff8bc2",
+        "accent": "#ffe0f0",
+        "icon": "VR",
+        "look": {
+          "top": "blazer",
+          "suit": "#c42a1a",
+          "skin": "#e8b597",
+          "hair": "#d1b88b",
+          "hairStyle": "feathered",
+          "brows": "arched",
+          "mouth": "lipstick",
+          "lipstick": "#c23d5c",
+          "earrings": "pearl",
+          "lashes": true,
+          "model": "barbara"
+        },
+        "voice": {
+          "pitch": 1.1,
+          "rate": 0.96
+        }
+      },
+      {
+        "id": "wes",
+        "displayName": "Wild Wes",
+        "fullName": "Wild Wes The Wildcard",
+        "persona": "The Wildcard",
+        "style": "Chaotic energy, weird instincts, and the ability to either lowball hard or go all-in for spectacle.",
+        "color": "#86a5ff",
+        "accent": "#dde6ff",
+        "icon": "WW",
+        "look": {
+          "top": "open-collar",
+          "suit": "#1d2c45",
+          "trousers": "#192635",
+          "skin": "#dea686",
+          "hair": "#3b2a20",
+          "hairStyle": "short",
+          "brows": "raised",
+          "mouth": "grin",
+          "model": "mark"
+        },
+        "voice": {
+          "pitch": 1.35,
+          "rate": 1.14
+        }
+      }
+    ],
+    "beats": [
+      {
+        "id": "b01",
+        "index": 0,
+        "phase": "intro",
+        "kind": "narration",
+        "speakerId": "narrator",
+        "speakerName": "Narrator",
+        "speakerRole": "Studio",
+        "targetId": null,
+        "tone": null,
+        "text": "Next into the tank: ClosetLift. Will the sharks bite, or circle and swim away?",
+        "effects": []
+      },
+      {
+        "id": "b02",
+        "index": 1,
+        "phase": "intro",
+        "kind": "entrance",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": null,
+        "tone": null,
+        "text": "Hi, Sharks. I'm Sam, and I'm the founder of ClosetLift.",
+        "effects": []
+      },
+      {
+        "id": "b03",
+        "index": 2,
+        "phase": "pitch",
+        "kind": "pitch",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": null,
+        "tone": null,
+        "text": "I'm seeking $150,000 in exchange for 12% of my company. Renters need more storage, but built-ins belong to the landlord and cheap wardrobes often fall apart during a move. We install adjustable floor-to-ceiling towers with broad protective pads and torque-limited compression posts—no drilling. Shelves, drawers and hanging rails click into the frame. We check ceiling suitability,,",
+        "effects": []
+      },
+      {
+        "id": "b04",
+        "index": 3,
+        "phase": "pitch",
+        "kind": "pitch",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": null,
+        "tone": null,
+        "text": "In our simulated first year, 600 households bought one $749 tower each, generating $449,400. Our $365 delivered-and-installed cost leaves $384 gross profit per order; we conservatively use that as LTV, against  So, Sharks: who's ready to invest $150,000 for 12% to fund a second installation crew, tower,?",
+        "effects": []
+      },
+      {
+        "id": "b05",
+        "index": 4,
+        "phase": "grill",
+        "kind": "question",
+        "speakerId": "rex",
+        "speakerName": "Rex",
+        "speakerRole": "The Skeptic",
+        "targetId": "founder",
+        "tone": null,
+        "text": "Here's my problem: we currently serve one metro area. Installation labor constrains expansion, some ceilings cannot safely support our system, and we cannot promise relocation service outside our territory.. Talk me out of it.",
+        "effects": []
+      },
+      {
+        "id": "b06",
+        "index": 5,
+        "phase": "grill",
+        "kind": "answer",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "rex",
+        "tone": null,
+        "text": "Yes, tension furniture exists. We sell a complete fitted-storage service: measured, installed and later moved by us for $149 within our service area—not a box customers must figure out themselves.",
+        "effects": []
+      },
+      {
+        "id": "b07",
+        "index": 6,
+        "phase": "grill",
+        "kind": "question",
+        "speakerId": "wes",
+        "speakerName": "Wild Wes",
+        "speakerRole": "The Wildcard",
+        "targetId": "founder",
+        "tone": null,
+        "text": "Quick, sing me your jingle.",
+        "effects": []
+      },
+      {
+        "id": "b08",
+        "index": 7,
+        "phase": "grill",
+        "kind": "answer",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "wes",
+        "tone": null,
+        "text": "LiftTower, LiftTower, it's all you need... I'll write the second verse with whoever invests.",
+        "effects": []
+      },
+      {
+        "id": "b09",
+        "index": 8,
+        "phase": "grill",
+        "kind": "question",
+        "speakerId": "luna",
+        "speakerName": "Luna",
+        "speakerRole": "The Visionary",
+        "targetId": "founder",
+        "tone": null,
+        "text": "Paint me the future. If everything goes right, what is ClosetLift in a decade?",
+        "effects": []
+      },
+      {
+        "id": "b10",
+        "index": 9,
+        "phase": "grill",
+        "kind": "answer",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "luna",
+        "tone": null,
+        "text": "We want renters to own their storage, even when they don't own their walls, starting with dense neighborhoods where one crew can serve several customers per building.",
+        "effects": []
+      },
+      {
+        "id": "b11",
+        "index": 10,
+        "phase": "grill",
+        "kind": "question",
+        "speakerId": "max",
+        "speakerName": "Max",
+        "speakerRole": "The Numbers Shark",
+        "targetId": "founder",
+        "tone": null,
+        "text": "Give me your acquisition cost and your lifetime value. No adjectives, just numbers.",
+        "effects": []
+      },
+      {
+        "id": "b12",
+        "index": 11,
+        "phase": "grill",
+        "kind": "answer",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "max",
+        "tone": null,
+        "text": "It costs us about $92 to land a customer, and they're worth $384 over their lifetime. That's 4.2 to one.",
+        "effects": []
+      },
+      {
+        "id": "b13",
+        "index": 12,
+        "phase": "grill",
+        "kind": "question",
+        "speakerId": "vera",
+        "speakerName": "Vera",
+        "speakerRole": "The Brand Guru",
+        "targetId": "founder",
+        "tone": null,
+        "text": "Who is your customer, and what does owning LiftTower say about them?",
+        "effects": []
+      },
+      {
+        "id": "b14",
+        "index": 13,
+        "phase": "grill",
+        "kind": "answer",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "vera",
+        "tone": null,
+        "text": "an urban renter expecting to stay at least a year, with limited closet space and enough disposable income to choose installed furniture over flat-pack assembly, I started ClosetLift after paying for a wardrobe that couldn't survive my next apartment. Our promise is simple: buy storage once and bring it with you.",
+        "effects": []
+      },
+      {
+        "id": "b15",
+        "index": 14,
+        "phase": "offers",
+        "kind": "out",
+        "speakerId": "max",
+        "speakerName": "Max",
+        "speakerRole": "The Numbers Shark",
+        "targetId": "founder",
+        "tone": "out",
+        "text": "It's close for me, but close doesn't get my money. The numbers don't work for me. I'm out.",
+        "effects": [
+          {
+            "type": "out",
+            "sharkId": "max"
+          }
+        ]
+      },
+      {
+        "id": "b16",
+        "index": 15,
+        "phase": "offers",
+        "kind": "out",
+        "speakerId": "rex",
+        "speakerName": "Rex",
+        "speakerRole": "The Skeptic",
+        "targetId": "founder",
+        "tone": "out",
+        "text": "It's close for me, but close doesn't get my money. I'm out.",
+        "effects": [
+          {
+            "type": "out",
+            "sharkId": "rex"
+          }
+        ]
+      },
+      {
+        "id": "b17",
+        "index": 16,
+        "phase": "offers",
+        "kind": "offer",
+        "speakerId": "vera",
+        "speakerName": "Vera",
+        "speakerRole": "The Brand Guru",
+        "targetId": "founder",
+        "tone": "offer",
+        "text": "I see a brand people will wear like a badge. $150,000 for 20.5%.",
+        "effects": [
+          {
+            "type": "offer",
+            "sharkId": "vera",
+            "offer": {
+              "cashUsd": 150000,
+              "equityPct": 20.5,
+              "kicker": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "b18",
+        "index": 17,
+        "phase": "offers",
+        "kind": "offer",
+        "speakerId": "luna",
+        "speakerName": "Luna",
+        "speakerRole": "The Visionary",
+        "targetId": "founder",
+        "tone": "offer",
+        "text": "I can see the future of this, and I want to be in it. $150,000 for 19.5%.",
+        "effects": [
+          {
+            "type": "offer",
+            "sharkId": "luna",
+            "offer": {
+              "cashUsd": 150000,
+              "equityPct": 19.5,
+              "kicker": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "b19",
+        "index": 18,
+        "phase": "offers",
+        "kind": "offer",
+        "speakerId": "wes",
+        "speakerName": "Wild Wes",
+        "speakerRole": "The Wildcard",
+        "targetId": "founder",
+        "tone": "offer",
+        "text": "I'm feeling dangerous. $150,000 for 15%!",
+        "effects": [
+          {
+            "type": "offer",
+            "sharkId": "wes",
+            "offer": {
+              "cashUsd": 150000,
+              "equityPct": 15,
+              "kicker": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "b20",
+        "index": 19,
+        "phase": "negotiation",
+        "kind": "ask",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": null,
+        "tone": null,
+        "text": "I've got three offers on the table. Before I decide: can anyone do better than 15%?",
+        "effects": []
+      },
+      {
+        "id": "b21",
+        "index": 20,
+        "phase": "negotiation",
+        "kind": "hold",
+        "speakerId": "luna",
+        "speakerName": "Luna",
+        "speakerRole": "The Visionary",
+        "targetId": "founder",
+        "tone": null,
+        "text": "I'm not getting into a bidding war. My 19.5% stands.",
+        "effects": []
+      },
+      {
+        "id": "b22",
+        "index": 21,
+        "phase": "negotiation",
+        "kind": "hold",
+        "speakerId": "vera",
+        "speakerName": "Vera",
+        "speakerRole": "The Brand Guru",
+        "targetId": "founder",
+        "tone": null,
+        "text": "20.5% is where I live. I'm not going lower.",
+        "effects": []
+      },
+      {
+        "id": "b23",
+        "index": 22,
+        "phase": "negotiation",
+        "kind": "counter",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "wes",
+        "tone": "counter",
+        "text": "I'm honored, Wes. But 15% is a lot of my company. Can you do 13.5%?",
+        "effects": [
+          {
+            "type": "counter",
+            "sharkIds": [
+              "wes"
+            ],
+            "offer": {
+              "cashUsd": 150000,
+              "equityPct": 13.5,
+              "kicker": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "b24",
+        "index": 23,
+        "phase": "negotiation",
+        "kind": "accept-counter",
+        "speakerId": "wes",
+        "speakerName": "Wild Wes",
+        "speakerRole": "The Wildcard",
+        "targetId": "founder",
+        "tone": "offer",
+        "text": "Ha! 13.5%! Somebody get me a confetti cannon!",
+        "effects": []
+      },
+      {
+        "id": "b25",
+        "index": 24,
+        "phase": "negotiation",
+        "kind": "accept",
+        "speakerId": "founder",
+        "speakerName": "Sam",
+        "speakerRole": "Founder, ClosetLift",
+        "targetId": "wes",
+        "tone": "deal",
+        "text": "Wes, you've got a deal!",
+        "effects": [
+          {
+            "type": "deal",
+            "sharkIds": [
+              "wes"
+            ],
+            "offer": {
+              "cashUsd": 150000,
+              "equityPct": 13.5,
+              "kicker": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "b26",
+        "index": 25,
+        "phase": "verdict",
+        "kind": "verdict",
+        "speakerId": "narrator",
+        "speakerName": "Narrator",
+        "speakerRole": "Studio",
+        "targetId": null,
+        "tone": "deal",
+        "text": "ClosetLift leaves the tank with $150,000 for 13.5% from Wild Wes. That values the company at $1.11 million, 11% under the ask.",
+        "effects": []
+      }
+    ],
+    "result": {
+      "outcome": "deal",
+      "dealType": "Deal",
+      "sharkIds": [
+        "wes"
+      ],
+      "investors": [
+        "Wild Wes The Wildcard"
+      ],
+      "offer": {
+        "cashUsd": 150000,
+        "equityPct": 13.5,
+        "kicker": null
+      },
+      "valuationUsd": 1111111,
+      "askValuationUsd": 1250000,
+      "termsLabel": "$150,000 for 13.5%",
+      "headline": "Wild Wes invests in ClosetLift",
+      "declinedOffer": null,
+      "declinedFrom": []
+    },
+    "report": {
+      "feasibilityPercent": 58,
+      "isGoodBusiness": "yes",
+      "minimumInitialInvestmentUsd": 50000,
+      "difficulty": "medium",
+      "timeToFirstRevenue": "2 weeks",
+      "summary": "ClosetLift has a credible path, led by a memorable brand and a big market. Execution risk is high, and that will decide how big it gets.",
+      "biggestRisk": "We currently serve one metro area. Installation labor constrains expansion, some ceilings cannot safely support our system, and we cannot promise relocation service outside our territory..",
+      "strengths": [
+        {
+          "id": "brand",
+          "label": "Brand power",
+          "score": 0.8
+        },
+        {
+          "id": "scalability",
+          "label": "Market size",
+          "score": 0.7
+        }
+      ],
+      "weaknesses": [
+        {
+          "id": "risk",
+          "label": "Low execution risk",
+          "score": 0.45
+        },
+        {
+          "id": "unitEconomics",
+          "label": "Customer economics",
+          "score": 0.45
+        }
+      ],
+      "factors": [
+        {
+          "id": "brand",
+          "label": "Brand power",
+          "score": 0.8
+        },
+        {
+          "id": "scalability",
+          "label": "Market size",
+          "score": 0.7
+        },
+        {
+          "id": "novelty",
+          "label": "Novelty",
+          "score": 0.65
+        },
+        {
+          "id": "traction",
+          "label": "Traction",
+          "score": 0.64
+        },
+        {
+          "id": "defensibility",
+          "label": "Defensibility",
+          "score": 0.6
+        },
+        {
+          "id": "margin",
+          "label": "Gross margin",
+          "score": 0.55
+        },
+        {
+          "id": "unitEconomics",
+          "label": "Customer economics",
+          "score": 0.45
+        },
+        {
+          "id": "risk",
+          "label": "Low execution risk",
+          "score": 0.45
+        }
+      ],
+      "keyNumbers": {
+        "askValuationUsd": 1250000,
+        "revenueTtmUsd": 449400,
+        "grossMarginPct": 51,
+        "ltvToCac": 4.2
+      }
+    },
+    "socialCaption": "I recreated Shark Tank, but every founder and shark is AI. Tonight: ClosetLift, more storage. No holes. Moves with you. Wild Wes closed at $150K for 13.5%.",
+    "generation": {
+      "model": "gpt-6.1-sol",
+      "requestedTier": "ultrafast",
+      "servedTier": "ultrafast",
+      "reasoning": "medium"
+    }
+  },
+  "deck": {
+    "id": "idea-uggrdjx0-s1-3afb840b-deck",
+    "title": "ClosetLift — More storage. No holes.",
+    "width": 1280,
+    "height": 720,
+    "provider": {
+      "id": "openai-html",
+      "label": "OpenAI HTML deck",
+      "live": true
+    },
+    "slides": [
+      {
+        "id": "slide-1",
+        "title": "Company",
+        "beatId": "b01",
+        "beatIndex": 0,
+        "html": "<section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#142c35;color:#fff8ed;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0;color:#ff937a\">CLOSETLIFT</p><small style=\"font-size:18px;line-height:1.2\">Simulated business</small></header><div style=\"display:flex;gap:60px;align-items:center\"><div style=\"width:760px\"><h1 style=\"font-size:64px;line-height:1.05;margin:0 0 28px 0\">More storage.<br />No holes.<br />Moves with you.</h1><p style=\"font-size:32px;line-height:1.35;margin:0;max-width:690px\">LiftTower: no-drill storage towers for apartment renters, installed and moved to their next home.</p></div><div style=\"width:340px;height:350px;box-sizing:border-box;padding:22px;border-width:5px;border-style:solid;border-color:#ff937a;border-radius:18px;display:flex;flex-direction:column;gap:18px\"><div style=\"height:80px;background-color:#ff937a;border-radius:8px\"></div><div style=\"height:80px;background-color:#f3cba1;border-radius:8px\"></div><div style=\"height:108px;background-color:#42606a;border-radius:8px\"></div></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">Sam · Founder</p><small style=\"font-size:18px\">01 / COMPANY</small></footer></section>"
+      },
+      {
+        "id": "slide-2",
+        "title": "Opportunity",
+        "beatId": "b03",
+        "beatIndex": 2,
+        "html": "<section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#fff8ed;color:#142c35;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">CLOSETLIFT / OPPORTUNITY</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">Renters need storage.<br />Not permanent built-ins.</h1><div style=\"display:flex;gap:32px;align-items:stretch\"><div style=\"flex:1;background-color:#e9e5da;border-radius:20px;padding:32px;box-sizing:border-box\"><h2 style=\"font-size:32px;line-height:1.2;margin:0 0 20px 0\">The problem</h2><p style=\"font-size:32px;line-height:1.3;margin:0\">Built-ins stay behind.<br />Cheap wardrobes can fail during moves.</p></div><div style=\"flex:1;background-color:#142c35;color:#fff8ed;border-radius:20px;padding:32px;box-sizing:border-box\"><h2 style=\"font-size:32px;line-height:1.2;margin:0 0 20px 0;color:#ff937a\">LiftTower</h2><p style=\"font-size:32px;line-height:1.3;margin:0\">Adjustable compression posts.<br />Protective pads.<br />Click-in storage.<br />No drilling.</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\"><strong>$749</strong> delivered and installed</p><small style=\"font-size:18px\">02 / OPPORTUNITY</small></footer></section>"
+      },
+      {
+        "id": "slide-3",
+        "title": "Traction",
+        "beatId": "b04",
+        "beatIndex": 3,
+        "html": "<section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#142c35;color:#fff8ed;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0;color:#ff937a\">CLOSETLIFT / TRACTION</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">600 households.<br />$449,400 in first-year revenue.</h1><div style=\"display:flex;gap:24px\"><div style=\"flex:1;padding:28px;background-color:#26434d;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0;color:#ff937a\">$749</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Price per tower</p></div><div style=\"flex:1;padding:28px;background-color:#26434d;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0;color:#ff937a\">$365</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Delivered-and-installed cost</p></div><div style=\"flex:1;padding:28px;background-color:#ff937a;color:#142c35;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0\">$384</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Gross profit per order</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">51% gross margin · $92 CAC · $384 LTV</p><small style=\"font-size:18px\">03 / TRACTION</small></footer></section>"
+      },
+      {
+        "id": "slide-4",
+        "title": "Ask",
+        "beatId": "b20",
+        "beatIndex": 19,
+        "html": "<section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#ff937a;color:#142c35;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">CLOSETLIFT / THE ASK</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">$150,000 to fund<br />a second installation crew.</h1><div style=\"display:flex;gap:28px\"><div style=\"flex:1;box-sizing:border-box;padding:30px;background-color:#fff8ed;border-radius:20px\"><p style=\"font-size:32px;line-height:1.2;margin:0 0 16px 0\">Original equity ask</p><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0\">12%</p></div><div style=\"flex:1;box-sizing:border-box;padding:30px;background-color:#142c35;color:#fff8ed;border-radius:20px\"><p style=\"font-size:32px;line-height:1.2;margin:0 0 16px 0\">Best offer on the table</p><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0\">15%</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center;gap:24px\"><p style=\"font-size:32px;line-height:1.2;margin:0\">Three offers. Can anyone do better than 15%?</p><small style=\"font-size:18px\">04 / NEGOTIATION</small></footer></section>"
+      }
+    ],
+    "generation": {
+      "model": "gpt-6.1-sol",
+      "requestedTier": "ultrafast",
+      "servedTier": "ultrafast",
+      "reasoning": "medium"
+    },
+    "download": {
+      "fileName": "idea-uggrdjx0-pitch-deck.html",
+      "mimeType": "text/html;charset=utf-8",
+      "content": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\"><title>ClosetLift — More storage. No holes.</title><style>html{scroll-snap-type:y mandatory;background:#101f28}body{margin:0;font-family:Arial;color:white}main{width:1280px;margin:auto}section.slide{width:1280px;height:720px;overflow:hidden;scroll-snap-align:start;page-break-after:always}nav{padding:20px}a{color:#d5b780;margin-right:24px}@media print{nav{display:none}@page{size:1280px 720px;margin:0}}</style></head><body><nav><a href=\"#slide-1\">Company</a><a href=\"#slide-2\">Opportunity</a><a href=\"#slide-3\">Traction</a><a href=\"#slide-4\">Ask</a></nav><main><section class=\"slide\" id=\"slide-1\" aria-label=\"Company\"><section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#142c35;color:#fff8ed;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0;color:#ff937a\">CLOSETLIFT</p><small style=\"font-size:18px;line-height:1.2\">Simulated business</small></header><div style=\"display:flex;gap:60px;align-items:center\"><div style=\"width:760px\"><h1 style=\"font-size:64px;line-height:1.05;margin:0 0 28px 0\">More storage.<br />No holes.<br />Moves with you.</h1><p style=\"font-size:32px;line-height:1.35;margin:0;max-width:690px\">LiftTower: no-drill storage towers for apartment renters, installed and moved to their next home.</p></div><div style=\"width:340px;height:350px;box-sizing:border-box;padding:22px;border-width:5px;border-style:solid;border-color:#ff937a;border-radius:18px;display:flex;flex-direction:column;gap:18px\"><div style=\"height:80px;background-color:#ff937a;border-radius:8px\"></div><div style=\"height:80px;background-color:#f3cba1;border-radius:8px\"></div><div style=\"height:108px;background-color:#42606a;border-radius:8px\"></div></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">Sam · Founder</p><small style=\"font-size:18px\">01 / COMPANY</small></footer></section></section><section class=\"slide\" id=\"slide-2\" aria-label=\"Opportunity\"><section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#fff8ed;color:#142c35;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">CLOSETLIFT / OPPORTUNITY</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">Renters need storage.<br />Not permanent built-ins.</h1><div style=\"display:flex;gap:32px;align-items:stretch\"><div style=\"flex:1;background-color:#e9e5da;border-radius:20px;padding:32px;box-sizing:border-box\"><h2 style=\"font-size:32px;line-height:1.2;margin:0 0 20px 0\">The problem</h2><p style=\"font-size:32px;line-height:1.3;margin:0\">Built-ins stay behind.<br />Cheap wardrobes can fail during moves.</p></div><div style=\"flex:1;background-color:#142c35;color:#fff8ed;border-radius:20px;padding:32px;box-sizing:border-box\"><h2 style=\"font-size:32px;line-height:1.2;margin:0 0 20px 0;color:#ff937a\">LiftTower</h2><p style=\"font-size:32px;line-height:1.3;margin:0\">Adjustable compression posts.<br />Protective pads.<br />Click-in storage.<br />No drilling.</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\"><strong>$749</strong> delivered and installed</p><small style=\"font-size:18px\">02 / OPPORTUNITY</small></footer></section></section><section class=\"slide\" id=\"slide-3\" aria-label=\"Traction\"><section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#142c35;color:#fff8ed;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0;color:#ff937a\">CLOSETLIFT / TRACTION</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">600 households.<br />$449,400 in first-year revenue.</h1><div style=\"display:flex;gap:24px\"><div style=\"flex:1;padding:28px;background-color:#26434d;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0;color:#ff937a\">$749</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Price per tower</p></div><div style=\"flex:1;padding:28px;background-color:#26434d;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0;color:#ff937a\">$365</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Delivered-and-installed cost</p></div><div style=\"flex:1;padding:28px;background-color:#ff937a;color:#142c35;border-radius:18px;box-sizing:border-box\"><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0 0 12px 0\">$384</p><p style=\"font-size:32px;line-height:1.2;margin:0\">Gross profit per order</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">51% gross margin · $92 CAC · $384 LTV</p><small style=\"font-size:18px\">03 / TRACTION</small></footer></section></section><section class=\"slide\" id=\"slide-4\" aria-label=\"Ask\"><section style=\"width:1280px;height:720px;box-sizing:border-box;padding:60px;background-color:#ff937a;color:#142c35;font-family:Arial;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden\"><header style=\"display:flex;justify-content:space-between;align-items:center\"><p style=\"font-size:32px;line-height:1.2;margin:0\">CLOSETLIFT / THE ASK</p><small style=\"font-size:18px\">Simulated business</small></header><h1 style=\"font-size:64px;line-height:1.05;margin:0\">$150,000 to fund<br />a second installation crew.</h1><div style=\"display:flex;gap:28px\"><div style=\"flex:1;box-sizing:border-box;padding:30px;background-color:#fff8ed;border-radius:20px\"><p style=\"font-size:32px;line-height:1.2;margin:0 0 16px 0\">Original equity ask</p><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0\">12%</p></div><div style=\"flex:1;box-sizing:border-box;padding:30px;background-color:#142c35;color:#fff8ed;border-radius:20px\"><p style=\"font-size:32px;line-height:1.2;margin:0 0 16px 0\">Best offer on the table</p><p style=\"font-size:64px;font-weight:700;line-height:1.1;margin:0\">15%</p></div></div><footer style=\"display:flex;justify-content:space-between;align-items:center;gap:24px\"><p style=\"font-size:32px;line-height:1.2;margin:0\">Three offers. Can anyone do better than 15%?</p><small style=\"font-size:18px\">04 / NEGOTIATION</small></footer></section></section></main></body></html>"
+    }
+  }
+}

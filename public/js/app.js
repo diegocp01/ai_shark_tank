@@ -1,6 +1,8 @@
+import { createOpenAIVoice } from "./openaiVoice.js";
+import { deckSlideAtBeat } from "/shared/deckTimeline.js";
+import { renderPitchDeck } from "./pitchDeck.js";
 import { applyBeat, createBoard } from "/shared/board.js";
 import { formatMoneyFull, formatMoneyShort, formatOfferFull, formatPercent } from "/shared/format.js";
-import { createConfetti } from "./confetti.js";
 import { createDirector } from "./director.js";
 import { icon } from "./icons.js";
 import { createStudio } from "./studio/studio.js";
@@ -23,6 +25,8 @@ const elements = {
   seedInput: $("#seed-input"),
   seedDice: $("#seed-dice"),
   rollButton: $("#roll-button"),
+  inventButton: $("#invent-button"),
+  productionNote: $("#production-note"),
   lobbyError: $("#lobby-error"),
   lowerThird: $("#lower-third"),
   ltKicker: $("#lt-kicker"),
@@ -30,9 +34,6 @@ const elements = {
   caption: $("#caption"),
   subName: $("#sub-name"),
   subText: $("#sub-text"),
-  stamp: $("#stamp"),
-  stampLabel: $("#stamp-label"),
-  confetti: $("#confetti"),
   transport: $("#transport"),
   progress: $("#progress"),
   progressFill: $("#progress-fill"),
@@ -49,19 +50,23 @@ const state = {
   selection: { pitchId: null, idea: "", seed: 1 },
   episode: null,
   download: null,
+  deck: null,
+  speech: null,
+  deckCanvases: [],
   board: null,
   director: null,
   speed: 1,
-  voiceOn: false,
+  voiceOn: true,
+  captions: false,
+  graphics: false,
   playedMs: 0,
   clockStartedAt: null,
   loading: false,
 };
 
-const confetti = createConfetti(elements.confetti);
 let studio = null;
 let voice = null;
-const timers = { stamp: null, toast: null, verdict: null, lowerThird: null, controls: null };
+const timers = { toast: null, verdict: null, lowerThird: null, controls: null };
 // Like a TV graphic, a lower-third goes out with the cut: it is cleared when
 // this test passes for the next beat (null = stays up).
 let lowerThirdUntil = null;
@@ -359,16 +364,6 @@ function setCaptionText(text, full) {
   elements.subText.textContent = cut > 0 ? text.slice(0, cut) : "";
 }
 
-function showStamp(tone) {
-  window.clearTimeout(timers.stamp);
-  elements.stampLabel.textContent = tone === "deal" ? "Deal!" : "No deal";
-  elements.stamp.dataset.tone = tone;
-  elements.stamp.classList.remove("is-visible");
-  void elements.stamp.offsetWidth;
-  elements.stamp.classList.add("is-visible");
-  timers.stamp = window.setTimeout(() => elements.stamp.classList.remove("is-visible"), 2800);
-}
-
 function renderProgress(index) {
   const total = state.episode?.beats.length || 0;
   const done = Math.max(0, Math.min(total, index + 1));
@@ -388,6 +383,13 @@ function renderTransport() {
   elements.speed.innerHTML = SPEEDS.concat(SPEEDS.includes(state.speed) ? [] : [state.speed])
     .map((speed) => `<button type="button" data-speed="${speed}" aria-pressed="${speed === state.speed}">${speed}×</button>`)
     .join("");
+  elements.body.dataset.captions = String(state.captions);
+  elements.body.dataset.graphics = String(state.graphics);
+  for (const [action, enabled, label] of [["captions", state.captions, "captions"], ["graphics", state.graphics, "offer graphics"]]) {
+    const button = elements.transport.querySelector(`[data-action="${action}"]`);
+    button.setAttribute("aria-pressed", String(enabled));
+    button.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${label}`);
+  }
   const voiceButton = elements.transport.querySelector('[data-action="voice"]');
   voiceButton.hidden = !voice?.supported;
   voiceButton.innerHTML = icon(state.voiceOn ? "voiceOn" : "voiceOff");
@@ -437,6 +439,7 @@ function renderVerdict() {
         <button class="primary" type="button" data-action="replay">${icon("restart")}Watch again</button>
         <button type="button" data-action="new-pitch">${icon("next")}Next pitch</button>
         <button type="button" data-action="download-report">${icon("download")}Download report</button>
+        <button type="button" data-action="download-deck">${icon("download")}Download HTML deck</button>
       </div>
       <div class="slate-links">
         <button type="button" data-action="copy-link">Copy link</button>
@@ -465,13 +468,11 @@ function closeVerdict() {
 // --- Show --------------------------------------------------------------------------
 
 function resetShow() {
-  for (const key of ["verdict", "stamp", "lowerThird"]) {
+  for (const key of ["verdict", "lowerThird"]) {
     window.clearTimeout(timers[key]);
   }
 
-  elements.stamp.classList.remove("is-visible");
   hideLowerThird();
-  confetti.stop();
   voice?.cancel();
   state.playedMs = 0;
   state.clockStartedAt = null;
@@ -479,6 +480,8 @@ function resetShow() {
   elements.transcript.innerHTML = "";
   studio.reset();
   studio.setPitch(stagePitch(state.episode.pitch));
+  studio.setDeck(state.deckCanvases);
+  voice?.prepare?.(state.episode, state.speech);
   studio.placeFounder("offstage");
   state.board = createBoard(state.episode);
   renderProgress(-1);
@@ -506,10 +509,12 @@ function buildDirector() {
       },
       onBeatStart(beat, { index, timing, silent }) {
         renderProgress(index - 1);
+        studio.showDeckSlide(deckSlideAtBeat(state.deck, index));
 
         if (silent) {
           return;
         }
+        if (state.voiceOn) { voice?.prefetch?.(beat); voice?.prefetch?.(state.episode.beats[index + 1]); }
 
         if (lowerThirdUntil?.(beat)) {
           hideLowerThird();
@@ -527,7 +532,7 @@ function buildDirector() {
           elements.caption.classList.add("is-thinking");
           elements.subText.textContent = "…";
         } else {
-          studio.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
+          studio.setSpeaker(beat.speakerId, { phase: voice?.live && state.voiceOn ? "waiting" : "speaking", lookAt: beat.targetId });
         }
 
         if (beat.kind === "pitch" && !pitchIntroShown) {
@@ -547,7 +552,7 @@ function buildDirector() {
         }
       },
       onTypingStart(beat) {
-        studio.setSpeaker(beat.speakerId, { phase: "speaking", lookAt: beat.targetId });
+        studio.setSpeaker(beat.speakerId, { phase: voice?.live && state.voiceOn ? "waiting" : "speaking", lookAt: beat.targetId });
       },
       onType(beat, text) {
         setCaptionText(text, beat.text || "");
@@ -576,12 +581,7 @@ function buildDirector() {
           }
 
           if (effect.type === "deal") {
-            showStamp("deal");
-            const colors = effect.sharkIds.map(colorFor).concat(["#f6c55b", "#ffffff"]);
-            confetti.burst({ colors, seed: state.episode.seed, originX: 0.5 });
             studio.handshake(effect.sharkIds[0]);
-          } else if (effect.type === "no_deal") {
-            showStamp("no-deal");
           }
         }
       },
@@ -589,7 +589,7 @@ function buildDirector() {
         studio.setSpeaker(null);
       },
       onSpeak(beat, speed) {
-        return state.voiceOn ? voice?.speak(beat.speakerId, beat.text, speed) : null;
+        return state.voiceOn ? voice?.speak(beat.speakerId, beat.text, speed, beat.id) : null;
       },
       onPause() {
         voice?.pause();
@@ -599,12 +599,11 @@ function buildDirector() {
       },
       onSkip() {
         voice?.cancel();
-        confetti.stop();
       },
       onFinish() {
         renderProgress(state.episode.beats.length - 1);
         studio.setSpeaker(null);
-        timers.verdict = window.setTimeout(openVerdict, 1400);
+        renderTransport();
       },
     },
   });
@@ -625,6 +624,7 @@ async function rollCameras() {
     return;
   }
 
+  void voice?.unlock?.().catch(() => {});
   const seed = readSeed();
 
   if (seed === null) {
@@ -651,6 +651,10 @@ async function rollCameras() {
       throw new Error(payload?.detail || "The studio could not produce that episode.");
     }
 
+    const deckCanvases = await renderPitchDeck(payload.deck);
+    state.deck = payload.deck;
+    state.deckCanvases = deckCanvases;
+    state.speech = payload.speech;
     state.episode = payload.episode;
     state.download = payload.download;
     setView("show");
@@ -668,11 +672,14 @@ function backToLobby() {
   state.director?.destroy();
   state.director = null;
   voice?.cancel();
-  confetti.stop();
   hideLowerThird();
   window.clearTimeout(timers.verdict);
   elements.caption.classList.remove("is-visible");
   studio.reset();
+  studio.setDeck([]);
+  state.speech = null;
+  state.deck = null;
+  state.deckCanvases = [];
   state.episode = null;
   state.playedMs = 0;
   state.clockStartedAt = null;
@@ -681,21 +688,21 @@ function backToLobby() {
   previewSelection();
 }
 
-function downloadReport() {
-  if (!state.download) {
+function downloadReport(download = state.download) {
+  if (!download) {
     return;
   }
 
-  const blob = new Blob([state.download.content], { type: state.download.mimeType });
+  const blob = new Blob([download.content], { type: download.mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = state.download.fileName;
+  link.download = download.fileName;
   document.body.append(link);
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showToast(`Downloaded ${state.download.fileName}`);
+  showToast(`Downloaded ${download.fileName}`);
 }
 
 // --- Events ------------------------------------------------------------------------
@@ -716,20 +723,28 @@ function handleTransportAction(action) {
       break;
     case "finish":
       director?.finish();
+      openVerdict();
       break;
     case "restart":
       playEpisode();
       break;
+    case "captions":
+    case "graphics":
+      state[action] = !state[action];
+      remember(action, state[action]);
+      renderTransport();
+      break;
     case "voice":
       state.voiceOn = !state.voiceOn;
       remember("voice", state.voiceOn);
+      if (state.voiceOn) void voice?.unlock?.().catch(() => {});
 
       if (!state.voiceOn) {
         voice?.cancel();
       }
 
       renderTransport();
-      showToast(state.voiceOn ? "Voices on (your browser's built-in speech)" : "Voices off");
+      showToast(state.voiceOn ? (voice.live ? "OpenAI voices on" : voice.available ? "Device voices on" : "No installed device voice available") : "Voices off");
       break;
     case "exit":
       backToLobby();
@@ -740,6 +755,18 @@ function handleTransportAction(action) {
 }
 
 function bindEvents() {
+  elements.inventButton.addEventListener("click", async () => {
+    if (state.loading) return;
+    setRollLoading(true); elements.inventButton.disabled = true; elements.inventButton.textContent = "Inventing…"; hideLobbyError();
+    try {
+      const response = await fetch("/api/ideas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ theme: elements.ideaInput.value.trim() }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Could not invent an idea.");
+      elements.ideaInput.value = payload.idea; state.selection.idea = payload.idea; elements.ownIdea.open = true;
+      updateCharCount(); renderLineup(); previewSelection();
+    } catch (error) { showLobbyError(error.message); }
+    finally { setRollLoading(false); elements.inventButton.disabled = false; elements.inventButton.textContent = "Invent an idea"; }
+  });
   elements.transport.addEventListener("click", (event) => {
     const speedButton = event.target.closest("[data-speed]");
 
@@ -824,6 +851,9 @@ function bindEvents() {
       case "close-verdict":
         closeVerdict();
         break;
+      case "download-deck":
+        downloadReport(state.deck?.download);
+        break;
       case "download-report":
         downloadReport();
         break;
@@ -862,6 +892,8 @@ function bindEvents() {
       handleTransportAction("finish");
     } else if (event.key === "ArrowRight") {
       handleTransportAction("next");
+    } else if (event.key.toLowerCase() === "c" && !event.metaKey && !event.ctrlKey) {
+      handleTransportAction("captions");
     } else if (event.key.toLowerCase() === "r" && !event.metaKey && !event.ctrlKey) {
       handleTransportAction("restart");
     }
@@ -892,11 +924,21 @@ async function boot() {
   await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 1500))]);
   studio = createStudio({ mount: elements.stage });
   studio.setSharks(state.config.sharks);
-  voice = createVoice({ sharks: state.config.sharks });
+  voice = state.config.speech?.provider === "openai" ? createOpenAIVoice({
+    onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
+    onActivity(active, speakerId) {
+      if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null);
+    },
+  }) : createVoice({ sharks: state.config.sharks });
+  elements.inventButton.hidden = !state.config.generation;
+  elements.productionNote.textContent = state.config.generation ? "OpenAI-generated ideas, decks and voices. Simulated businesses and investor decisions." : "Scripted simulation · device voices";
+  if (state.config.generation) elements.seedInput.closest("label").title = "Controls the simulated investor decisions. Live generations vary.";
 
   const url = readUrl();
   state.speed = url.speed ?? 1;
-  state.voiceOn = Boolean(voice.supported && recall("voice", false));
+  state.voiceOn = Boolean(voice.supported && recall("voice", true));
+  state.captions = Boolean(recall("captions", false));
+  state.graphics = Boolean(recall("graphics", false));
   const knownPitch = state.config.pitches.some((pitch) => pitch.id === url.pitchId);
   state.selection.pitchId = knownPitch ? url.pitchId : state.config.pitches[0].id;
   state.selection.seed = Number.isInteger(url.seed) && url.seed >= 1 ? Math.min(url.seed, state.config.limits.maxSeed) : state.config.defaults.seed;

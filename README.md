@@ -4,9 +4,9 @@
   <img src="static/image.jpg" alt="AI Shark Tank: Rex, the Skeptic, played by the rigged Kevin model, grills the founder from his lounge chair" width="900" />
 </p>
 
-`AI Shark Tank` is a Shark Tank episode you watch in the browser, filmed like the TV show: a 3D studio with the five AI sharks in their lounge chairs, an AI founder who walks in down the hallway, and every question, offer, counter, and handshake cut together from show-style camera angles. There's no dashboard. It plays full screen with TV graphics, made for screenshots, short videos, and social-ready demos.
+`AI Shark Tank` is a Shark Tank episode you watch in the browser, filmed like the TV show: a 3D studio with the five AI sharks in their lounge chairs, an AI founder who walks in down the hallway, and every question, offer, counter, and handshake cut together from show-style camera angles. It plays full screen like a TV show, with the HUD hidden by default.
 
-Right now every episode comes from a **deterministic scripted engine**. There are no API keys and no model calls. The same pitch and seed always produce the same episode, so you can test, record, and share exact takes. A live model provider can plug in later without touching the UI (see [Connecting a live model later](#connecting-a-live-model-later)).
+With OpenAI configured, **GPT-6.1 Sol with medium reasoning and Ultrafast processing** invents startup ideas, develops custom pitches, and writes HTML slide decks. **GPT-4o mini TTS** gives the narrator, founder and five investors separate voices. Investor dialogue, scoring, offers and negotiation still use the deterministic simulation engine. The businesses and numbers are fictional. Explicit mock mode keeps development and tests offline.
 
 ## Demo
 
@@ -19,7 +19,9 @@ npm install
 npm start
 ```
 
-Open [http://127.0.0.1:5050](http://127.0.0.1:5050). No `.env` is needed.
+Open [http://127.0.0.1:5050](http://127.0.0.1:5050). The server loads ignored `.env.local` and `.env` files; a configured `OPENAI_API_KEY` selects OpenAI mode automatically. Credentials stay server-side. `AI_SHARK_TANK_MODE=mock npm start` runs the complete offline demo; `AI_SHARK_TANK_MODE=openai` requires a key. The server binds to loopback only.
+
+The live requests use exactly `model: "gpt-6.1-sol"`, `reasoning: { effort: "medium" }`, and `service_tier: "ultrafast"`. Returned metadata records the actual served tier. Errors are displayed rather than silently switching models or falling back to mock generation. See [OpenAI model documentation](https://developers.openai.com/api/docs/guides/latest-model) and [Ultrafast mode](https://developers.openai.com/api/docs/guides/ultrafast-mode).
 
 ### The cast
 
@@ -46,8 +48,8 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
   <img src="static/pitch.jpg" alt="The handshake: Max stands to shake on a deal with the founder of LedgerLoop" width="440" />
 </p>
 
-1. **Pick a founder.** Six hand-written pitches (pet hardware, food-truck SaaS, frozen dumplings, a sassy plant sensor, ocean-plastic buoys, a mismatched-sock club), or type your own idea and the engine builds a company around it.
-2. **Pick a seed.** Same pitch + seed = same episode. A different seed is an alternate take: different questions, a different shark mood, sometimes a different deal.
+1. **Pick a founder.** Six hand-written pitches (pet hardware, food-truck SaaS, frozen dumplings, a sassy plant sensor, ocean-plastic buoys, a mismatched-sock club), or type your own idea. In OpenAI mode, **Invent an idea** creates a new concept and the model builds the business around it.
+2. **Pick a seed.** In mock mode, same pitch + seed = same episode. Live generations vary; replay within a loaded show reuses its deck and script. A different seed is an alternate take: different questions, a different shark mood, sometimes a different deal.
 3. **Enter the tank.** The show runs through six phases:
    - **Cold open** and the founder's entrance
    - **Pitch**: the ask, the problem, the product, the proof
@@ -55,8 +57,8 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
    - **Offers**: each shark scores the pitch on eight business factors (traction, margin, customer economics, defensibility, novelty, market size, brand, execution risk) through their own persona weights. Above their threshold they make an offer, and the less excited they are, the more equity they want. The least interested go out first.
    - **Negotiation**: with several offers the founder either starts a bidding war or asks two sharks to team up. Then the founder counters, and the shark accepts, meets in the middle, or holds firm. The founder walks if the terms pass their walk-away point.
    - **Verdict**: deal or no deal, plus a feasibility report
-4. **Watch it like TV.** The camera cuts between the show's setups: an establishing wide of the set, the founder's entrance down the blue hallway, close-ups on whoever is talking, over-the-shoulder reverse shots from behind the sharks, and a medium shot as each shark decides. Sharks lean in when they make an offer and sit back with their arms crossed when they go out. On a deal, the shark stands up and shakes the founder's hand; on a no-deal, the founder walks back out. Captions run at the bottom, and offers, counters, and the final terms come up as lower-thirds.
-5. **Take it with you.** The end slate shows the result and the feasibility headline. From there you can watch again, download the full feasibility report as Markdown (with the transcript), or copy a share link or social caption.
+4. **Watch it like TV.** The camera cuts between the show's setups: an establishing wide of the set, the founder's entrance down the blue hallway, close-ups on whoever is talking, over-the-shoulder reverse shots from behind the sharks, and a medium shot as each shark decides. Sharks lean in when they make an offer and sit back with their arms crossed when they go out. On a deal, the shark stands up and shakes the founder's hand; on a no-deal, the founder walks back out. Captions and offer graphics are optional and off by default; toggle CC or Info in the player. There are no persistent badges, timecodes, deal stamps, or confetti.
+5. **Take it with you.** The final studio shot stays on screen. Open Show verdict from the player to see the result and feasibility headline. From there you can watch again, download the full feasibility report as Markdown (with the transcript), or copy a share link or social caption.
 
 <p align="center">
   <img src="static/verdict.jpg" alt="The end slate: final terms and the feasibility headline over the shark panel" width="600" />
@@ -70,10 +72,11 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
 | `→` | Next line |
 | `Shift` + `→` | Skip to the verdict |
 | `R` | Restart the episode |
+| `C` | Toggle captions |
 
-The player bar fades in when you move the mouse or pause. Speeds go from 1× to 3×. The voice toggle reads lines aloud with your browser's built-in speech synthesis, so it still makes no network calls.
+The player appears on pointer movement, tap, or keyboard interaction and hides after 2.6 seconds, including while paused and on phones. Keyboard focus keeps the controls accessible. CC (or C) toggles captions; Info toggles offer graphics. Both preferences are remembered. Speeds go from 1× to 3×. OpenAI mode plays generated speech through Web Audio, prefetches the current and next lines, and supports pause/resume, skip and replay. Mock mode uses installed device voices only. A failed live voice request disables speech with an error message; CC remains available.
 
-The 3D studio renders with WebGL 2 (bloom, soft shadows, and MSAA on a GPU). Without GPU acceleration it switches itself to a light mode (lower resolution, no shadows); `?quality=low` or `?quality=high` forces either. Without WebGL at all, the show still plays with captions and graphics.
+The 3D studio renders with WebGL 2: burgundy leather chairs with walnut frames and brass nailheads, a woven patterned rug, recessed timber panels, stone bays, glass pendants, physical product props, broad softbox lighting, soft shadows, subtle bloom, and MSAA. High quality adds a restrained planar floor reflection; stationary set meshes are batched by material. All textures are generated locally and fonts use the system stack. Rendering uses no CDN assets or remote fonts. OpenAI generation and speech requests go through the local Express server; the browser never receives an API key. The character models remain stylized studies rather than photoreal scans. Without GPU acceleration it switches itself to a light mode (lower resolution, no shadows); `?quality=low` or `?quality=high` forces either. Without WebGL at all, the show still plays with captions and graphics.
 
 ### Share links
 
@@ -87,7 +90,7 @@ The 3D studio renders with WebGL 2 (bloom, soft shadows, and MSAA on a GPU). Wit
 
 ## Episode format
 
-`POST /api/episodes` with `{ "pitchId": "barklight", "seed": 1 }` (or `{ "idea": "...", "seed": 1 }`) returns `{ episode, download, allTime }`. The episode is a self-contained script:
+`POST /api/episodes` with `{ "pitchId": "barklight", "seed": 1 }` (or `{ "idea": "...", "seed": 1 }`) returns `{ episode, deck, speech, download, allTime }`. The episode is a self-contained script:
 
 | Field | What it holds |
 | --- | --- |
@@ -103,15 +106,23 @@ The 3D studio renders with WebGL 2 (bloom, soft shadows, and MSAA on a GPU). Wit
 
 Other endpoints: `GET /api/config` (sharks, lineup, phases, limits), `GET /api/health`, and `POST /api/feasibility-report` (score any pitch text).
 
-## Connecting a live model later
+## OpenAI generation and speech
 
-All episode generation goes through `src/lib/providers/index.js`. To add a model-backed provider:
+`src/lib/openai/client.js` calls the Responses and Speech APIs with request timeouts, strict JSON schemas and local validation. `providers.js` implements idea/custom-business generation and the existing HTML deck interface. Preset businesses retain their authored data while receiving fresh model-authored decks. All generated HTML passes through the slide sanitizer.
 
-1. Implement `{ id, label, live: true, async createEpisode({ pitchId, idea, seed }) }` and return the same episode shape.
-2. Run the result through `assertEpisodeConsistency` so its effects add up to its result.
-3. Select it in `getEpisodeProvider()`, for example from an environment variable, and put the key in a local `.env` that stays out of git.
+`POST /api/ideas` accepts an optional short `theme`. `POST /api/speech` accepts only a server-issued show `token` and an existing `beatId`; clients cannot submit arbitrary paid speech text. Audio is generated on demand, deduplicated and cached in memory (128 clips / 32 MB). Sessions expire after two hours and are bounded to 24 shows. Restarting the server requires a new episode for speech. Cross-site browser POSTs are rejected. The default server is a local app, not a publicly authenticated multi-user service.
 
-The studio, graphics, end slate, and report work unchanged. The original OpenAI Agents SDK engine is in git history (commit `a75b7a5`) if you want to reuse any of it.
+| Character | OpenAI voice |
+| --- | --- |
+| Narrator | cedar |
+| Founder | coral |
+| Rex | onyx |
+| Luna | marin |
+| Max | ash |
+| Vera | sage |
+| Wild Wes | echo |
+
+These are original synthetic voices, not cloned panel voices. The lobby discloses AI-generated audio. See [OpenAI TTS documentation](https://developers.openai.com/api/docs/guides/text-to-speech).
 
 ## Project structure
 
@@ -124,18 +135,20 @@ src/lib/ideaPitch.js           Free-text idea -> structured pitch (seeded)
 src/lib/feasibility.js         Feasibility report and Markdown download
 src/lib/sharkProfiles.js       Shark personas, weights, thresholds, looks
 src/lib/rng.js                 Seeded PRNG (cyrb53 + mulberry32)
-src/lib/providers/index.js     Episode provider seam
+src/lib/providers/index.js     Offline episode provider
+src/lib/openai/                OpenAI client, idea/pitch/deck providers and cached TTS
 src/lib/allTimeStatsStore.js   All-time archive (data/all-time-stats.json)
 src/shared/                    Formatting + deal-board reducer, shared with the browser
-public/index.html              Full-screen broadcast shell (title screen, TV graphics, player bar)
-public/styles.css              Broadcast styling
+public/index.html              Full-screen show, quiet lobby, optional captions and transient player
+public/styles.css              TV viewing mode and responsive controls
 public/js/app.js               Title screen, show, and end-slate controller
 public/js/director.js          Clock-driven playback engine (pure, unit-tested)
+public/js/openaiVoice.js       Web Audio playback, prefetch, pause/resume and cancellation
 public/js/studio/studio.js     3D renderer, blocking, and the camera director (shots and cuts)
-public/js/studio/set.js        The set: slat wall, stairs, lounge chairs, side tables, rug, hallway, lights
+public/js/studio/set.js        Leather chairs, timber architecture, props, rug, reflections and lights
 public/js/studio/character.js  Rigged procedural 3D people (poses, walking, gestures, gaze, blinking, talking)
 public/js/studio/skin.js       Drives rigged GLB characters (Kevin, Lori, Barbara, Mark) from the procedural joint rig
-public/js/studio/textures.js   Painted textures: outfits, rug, product board, sign, wood, marble
+public/js/studio/textures.js   Local textures: outfits, woven rug, material detail, product board, wood, marble
 public/js/voice.js             Optional browser speech synthesis
 tests/node/                    Engine, reducer, director, and HTTP API tests
 tests/e2e/                     Playwright tests against the real server
@@ -145,7 +158,8 @@ tests/e2e/                     Playwright tests against the real server
 
 ```bash
 npm run test:node   # node:test: golden episodes, invariants, reducer, director, API
-npm run test:e2e    # Playwright against the real server with software WebGL (first run: npx playwright install chromium)
+npm run test:e2e    # Software WebGL; first run: npx playwright install chromium
+PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_GPU=1 npm run test:e2e -- --workers=1  # Installed Chrome + GPU
 npm test            # both
 ```
 
@@ -157,3 +171,13 @@ The Node suite pins exact golden episodes (for example, Barklight seed 1 always 
 | --- | --- | --- |
 | `PORT` | `5050` | Server port |
 | `AI_SHARK_TANK_STATS_PATH` | `data/all-time-stats.json` | Where the all-time archive is written |
+
+### HTML pitch decks
+
+Each episode includes a deck separate from its script. OpenAI mode generates the HTML; mock mode creates deterministic company, opportunity, traction and ask slides. Each slide is tied to a beat ID, advances on the physical studio display and resets on replay. **Download HTML deck** exports a self-contained presentation.
+
+The browser lays out sanitized HTML at 1280×720 and rasterizes it locally through SVG `foreignObject` into a Three.js texture, preserving camera perspective and occlusion. Slides support semantic HTML, inline typography, flex layouts and CSS metric cards. Scripts, external assets and unsupported styles are stripped. The server validates 1–8 slides, chronological beat cues and a 40,000-character limit per slide. Tests verify rendered pixels, timing, replay and downloads in installed Chrome.
+
+`createApp` accepts injected episode/deck providers and a speech service. Unit and browser tests use local stubs or explicit mock mode and never require a key or make paid requests. `review/openai/live-check.mjs` is an **opt-in paid smoke check**, validating a custom pitch, HTML deck and seven short TTS clips; its stored metadata records the served model/tier.
+
+Character animation uses skull-base pivots and shared neck/head gaze, blended gestures and facial motion, opposite arm/leg swing, and travel-speed-based stepping. Imported rigs receive a small runtime neck-length correction while preserving their face scale and original GLBs. The procedural walker grounds its support ankle on the flat studio floor. This is authored kinematic animation, not motion capture; the existing cast remains stylized. Visual comparisons and motion validation are in `review/characters/`.

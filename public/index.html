@@ -8,12 +8,6 @@
     <meta name="description" content="Five AI sharks, one AI founder, every offer negotiated on air. A 3D Shark Tank simulator." />
     <title>AI Shark Tank</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23050302'/%3E%3Cpath d='M12 50 C22 36 32 16 52 10 C45 24 43 36 47 50 Z' fill='%2339e0c8'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
     <script type="importmap">
       {
@@ -29,19 +23,13 @@
       <div class="stage" id="stage" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
 
-      <div class="bug" aria-hidden="true">
-        <svg viewBox="0 0 64 48"><path d="M4 44 C14 30 26 10 52 4 C44 18 42 30 46 44 Z" /></svg>
-        <span><b>AI</b> Shark Tank</span>
-      </div>
-      <div class="onair" aria-hidden="true">
-        <span class="onair-dot"></span><span>Live</span><span class="timecode" id="timecode">00:00:00</span>
-      </div>
+      <span class="sr-only" id="timecode" aria-hidden="true">00:00:00</span>
 
       <section class="title-screen" id="lobby" aria-labelledby="show-title">
         <div class="title-card">
-          <p class="eyebrow"><span class="onair-dot"></span>Tonight in the tank</p>
+          <p class="eyebrow">Inside the studio</p>
           <h1 id="show-title"><b>AI</b> Shark Tank</h1>
-          <p class="title-tagline">Five AI sharks. One AI founder. Every offer negotiated on air.</p>
+          <p class="title-tagline">One pitch. Five investors. A seat at the table.</p>
 
           <div class="lineup" id="pitch-list" role="radiogroup" aria-label="Choose tonight's founder"></div>
 
@@ -57,6 +45,7 @@
               <textarea id="idea-input" rows="2" maxlength="140" placeholder="A subscription box of snacks for houseplants" autocomplete="off"></textarea>
               <span class="char-count" id="char-count">0/140</span>
             </div>
+            <button type="button" id="invent-button" hidden>Invent an idea</button>
           </details>
 
           <div class="title-actions">
@@ -67,6 +56,7 @@
               <button type="button" id="seed-dice" aria-label="Pick a random seed"></button>
             </label>
           </div>
+          <p class="production-note" id="production-note"></p>
           <p class="form-error" id="lobby-error" role="alert" hidden></p>
         </div>
       </section>
@@ -81,9 +71,6 @@
         <p class="sub-text" id="sub-text"></p>
       </div>
 
-      <div class="stamp" id="stamp" aria-hidden="true"><span id="stamp-label">Deal</span></div>
-      <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
-
       <div class="player" id="transport" aria-label="Playback controls">
         <button type="button" data-action="restart" aria-label="Restart episode" title="Restart (R)"></button>
         <button type="button" class="player-main" data-action="toggle" aria-label="Pause" title="Play / pause (Space)"></button>
@@ -94,6 +81,8 @@
         </div>
         <div class="player-speed" id="speed" role="group" aria-label="Playback speed"></div>
         <button type="button" data-action="voice" aria-pressed="false" aria-label="Turn voices on" title="Browser voices" hidden></button>
+        <button type="button" data-action="captions" aria-label="Show captions" aria-pressed="false" title="Captions (C)">CC</button>
+        <button type="button" data-action="graphics" aria-label="Show offer graphics" aria-pressed="false" title="Offer graphics">Info</button>
         <button type="button" data-action="exit" aria-label="Lobby" title="Back to the lobby"></button>
       </div>
     </main>

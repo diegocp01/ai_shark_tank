@@ -15,7 +15,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
+    "dotenv": "^18.0.9",
     "express": "^5.2.1",
+    "sanitize-html": "^2.18.1",
     "three": "^0.180.0"
   },
   "devDependencies": {

@@ -1,4 +1,9 @@
 import express from "express";
+import dotenv from "dotenv";
+import { AIError, createOpenAIClient } from "./src/lib/openai/client.js";
+import { createLiveProviders } from "./src/lib/openai/providers.js";
+import { createSpeechService } from "./src/lib/openai/speech.js";
+import { createPitchDeck, mockDeckProvider } from "./src/lib/pitchDeck.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -72,6 +77,7 @@ async function recordEpisode(episode) {
 }
 
 function sendError(res, error, fallbackMessage) {
+  if (error instanceof AIError) return res.status(error.status).json({ detail: error.message });
   if (error instanceof RequestError) {
     return res.status(400).json({ detail: error.message });
   }
@@ -84,12 +90,19 @@ function sendError(res, error, fallbackMessage) {
   return res.status(500).json({ detail: fallbackMessage });
 }
 
-export function createApp() {
+export function createApp({ deckProvider = mockDeckProvider, episodeProvider = getEpisodeProvider(), speechService = null, generateIdea = null, aiSettings = null } = {}) {
   const app = express();
-  const provider = getEpisodeProvider();
+  const provider = episodeProvider;
+  let generating = 0;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "16kb" }));
+  app.use("/api", (req, res, next) => {
+    if (req.method === "POST" && (req.get("sec-fetch-site") === "cross-site" || (req.get("origin") && req.get("origin") !== `${req.protocol}://${req.get("host")}`))) {
+      return res.status(403).json({ detail: "Requests must come from this studio." });
+    }
+    next();
+  });
   app.use(express.static(path.join(__dirname, "public")));
   app.use("/shared", express.static(path.join(__dirname, "src", "shared")));
   app.use("/vendor/three/build", express.static(path.join(__dirname, "node_modules", "three", "build")));
@@ -102,6 +115,9 @@ export function createApp() {
   app.get("/api/config", (_req, res) => {
     res.json({
       provider: describeProvider(provider),
+      deckProvider: describeProvider(deckProvider),
+      speech: speechService?.describe() || { provider: "device" },
+      generation: aiSettings,
       sharks: SHARK_PROFILES.map(toPublicShark),
       pitches: PRESET_PITCHES.map(summarizePitch),
       phases: PHASES,
@@ -110,15 +126,38 @@ export function createApp() {
     });
   });
 
+  app.post("/api/ideas", async (req, res) => {
+    if (!generateIdea) return res.status(503).json({ detail: "Idea generation needs OpenAI mode." });
+    if (generating >= 2) return res.status(429).json({ detail: "The studio is already preparing a show. Please wait." });
+    generating++;
+    try { res.json(await generateIdea(typeof req.body?.theme === "string" ? req.body.theme.slice(0, 140) : "")); }
+    catch (error) { sendError(res, error, "Could not generate an idea. Please try again."); }
+    finally { generating--; }
+  });
+
+  app.post("/api/speech", async (req, res) => {
+    if (!speechService) return res.status(503).json({ detail: "OpenAI voices are not enabled." });
+    try {
+      if (typeof req.body?.token !== "string" || typeof req.body?.beatId !== "string") throw new RequestError("Send an audio session token and beatId.");
+      const audio = await speechService.audio(req.body.token, req.body.beatId);
+      res.set({ "Content-Type": "audio/mpeg", "Cache-Control": "private, no-store" }).send(audio);
+    } catch (error) { sendError(res, error, "Could not generate this voice line."); }
+  });
+
   app.post("/api/episodes", async (req, res) => {
+    if (generating >= 2) return res.status(429).json({ detail: "The studio is already preparing a show. Please wait." });
+    generating++;
     try {
       const request = readEpisodeRequest(req.body);
       const episode = await provider.createEpisode(request);
+      const deck = await createPitchDeck(episode, deckProvider);
       const archive = await recordEpisode(episode);
       const footer = archive ? formatAllTimeStatsForReport(archive) : "";
 
       res.json({
         episode,
+        deck,
+        speech: speechService?.register(episode) || null,
         allTime: archive ? summarizeAllTimeStats(archive) : null,
         download: {
           fileName: buildReportFileName(episode.pitch.startupName),
@@ -128,7 +167,7 @@ export function createApp() {
       });
     } catch (error) {
       sendError(res, error, "Something went wrong while producing the episode.");
-    }
+    } finally { generating--; }
   });
 
   // Standalone report for any pitch text, kept for API clients. Uses the same
@@ -186,9 +225,16 @@ export function createApp() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  dotenv.config({ path: [path.join(__dirname, ".env.local"), path.join(__dirname, ".env")], quiet: true });
   const port = Number.parseInt(process.env.PORT || "5050", 10);
-
-  createApp().listen(port, () => {
+  const mode = process.env.AI_SHARK_TANK_MODE || (process.env.OPENAI_API_KEY ? "openai" : "mock");
+  if (!["openai", "mock"].includes(mode)) throw new Error("AI_SHARK_TANK_MODE must be openai or mock.");
+  let options = {};
+  if (mode === "openai") {
+    const client = createOpenAIClient({ apiKey: process.env.OPENAI_API_KEY });
+    options = { ...createLiveProviders(client), speechService: createSpeechService(client), aiSettings: client.settings };
+  }
+  createApp(options).listen(port, "127.0.0.1", () => {
     console.log(`AI Shark Tank studio running at http://127.0.0.1:${port}`);
   });
 }

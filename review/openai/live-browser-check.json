@@ -1,0 +1,17 @@
+{
+  "provider": "openai-pitch",
+  "deck": {
+    "model": "gpt-6.1-sol",
+    "requestedTier": "ultrafast",
+    "servedTier": "ultrafast",
+    "reasoning": "medium"
+  },
+  "slides": 4,
+  "speechStatuses": [
+    200,
+    200
+  ],
+  "audioStarted": true,
+  "paused": true,
+  "errors": []
+}

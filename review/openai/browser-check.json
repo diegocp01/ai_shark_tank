@@ -1,0 +1,51 @@
+{
+  "errors": [],
+  "layouts": [
+    {
+      "slide": 1,
+      "overflow": []
+    },
+    {
+      "slide": 2,
+      "overflow": []
+    },
+    {
+      "slide": 3,
+      "overflow": []
+    },
+    {
+      "slide": 4,
+      "overflow": []
+    }
+  ],
+  "audioDurations": [
+    {
+      "speaker": "narrator",
+      "seconds": 4.704
+    },
+    {
+      "speaker": "founder",
+      "seconds": 5.4
+    },
+    {
+      "speaker": "rex",
+      "seconds": 4.368
+    },
+    {
+      "speaker": "luna",
+      "seconds": 4.608
+    },
+    {
+      "speaker": "max",
+      "seconds": 5.112
+    },
+    {
+      "speaker": "vera",
+      "seconds": 4.968
+    },
+    {
+      "speaker": "wes",
+      "seconds": 4.752
+    }
+  ]
+}

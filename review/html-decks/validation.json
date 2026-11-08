@@ -1,0 +1,146 @@
+{
+  "errors": [],
+  "external": [],
+  "layout": [
+    {
+      "deck": "barklight-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "barklight-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "barklight-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "barklight-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "ledgerloop-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "ledgerloop-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "ledgerloop-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "ledgerloop-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "dumpling-dynasty-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "dumpling-dynasty-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "dumpling-dynasty-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "dumpling-dynasty-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "sproutsy-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "sproutsy-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "sproutsy-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "sproutsy-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "tidetrack-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "tidetrack-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "tidetrack-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "tidetrack-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "odd-sox-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "odd-sox-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "odd-sox-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "odd-sox-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    },
+    {
+      "deck": "idea-21nzgorz-s1-deck",
+      "slide": "slide-1",
+      "overflow": []
+    },
+    {
+      "deck": "idea-21nzgorz-s1-deck",
+      "slide": "slide-2",
+      "overflow": []
+    },
+    {
+      "deck": "idea-21nzgorz-s1-deck",
+      "slide": "slide-3",
+      "overflow": []
+    },
+    {
+      "deck": "idea-21nzgorz-s1-deck",
+      "slide": "slide-4",
+      "overflow": []
+    }
+  ]
+}

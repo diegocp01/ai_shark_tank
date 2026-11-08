@@ -2,7 +2,6 @@
 // product display board, the neon sign, and wood/marble surfaces.
 
 import * as THREE from "three";
-import { iconSvg } from "../icons.js";
 
 function makeCanvas(width, height) {
   const canvas = document.createElement("canvas");
@@ -216,47 +215,70 @@ export function outfitTexture(look, accent) {
   return toTexture(canvas);
 }
 
+// Locally generated material detail. Linear grayscale maps are never color-
+// managed as photographs; no texture service, CDN or image API is involved.
+export function surfaceTexture(kind = "leather") {
+  const [canvas, ctx] = makeCanvas(512, 512);
+  const random = seeded(kind === "leather" ? 42 : 19);
+  const image = ctx.createImageData(512, 512);
+  for (let y = 0; y < 512; y++) {
+    for (let x = 0; x < 512; x++) {
+      const noise = random();
+      const weave = kind === "fabric" ? (x % 4 < 2 ? 18 : -18) + (y % 4 < 2 ? 12 : -12) : 0;
+      const grain = kind === "wood" ? Math.sin(y * 1.8 + Math.sin(x * 0.03) * 2) * 18 : 0;
+      const v = Math.round(180 + noise * 65 + weave + grain);
+      const i = (y * 512 + x) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = v; image.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  if (kind === "leather") {
+    ctx.strokeStyle = "rgba(45,45,45,0.2)"; ctx.lineWidth = 0.65;
+    for (let i = 0; i < 1600; i++) {
+      const x = random() * 512, y = random() * 512;
+      ctx.beginPath(); ctx.ellipse(x, y, 1 + random() * 3, 1 + random() * 2, random() * 3, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  return toTexture(canvas, { repeat: kind === "fabric" ? [10, 10] : [2, 2], srgb: false });
+}
+
 export function rugTexture() {
-  const [canvas, context] = makeCanvas(1024, 720);
-  context.fillStyle = "#6a1a1f";
-  context.fillRect(0, 0, 1024, 720);
-  const border = (inset, color, width) => {
-    context.strokeStyle = color;
-    context.lineWidth = width;
-    context.strokeRect(inset, inset, 1024 - inset * 2, 720 - inset * 2);
-  };
-  border(18, "#1f2c4d", 34);
-  border(48, "#d6a45a", 6);
-  border(70, "#2b3d66", 14);
-  border(92, "#d6a45a", 3);
+  const [canvas, ctx] = makeCanvas(1536, 1024);
   const random = seeded(11);
-
-  for (let index = 0; index < 900; index += 1) {
-    context.fillStyle = `rgba(${random() > 0.5 ? "255,220,160" : "20,10,20"},${0.05 + random() * 0.06})`;
-    context.fillRect(110 + random() * 804, 110 + random() * 500, 4 + random() * 10, 2);
+  ctx.fillStyle = "#804333"; ctx.fillRect(0, 0, 1536, 1024);
+  for (const [inset, color, width] of [[22, "#c5a17b", 28], [50, "#3e4849", 18], [96, "#b78f64", 62], [134, "#333c3d", 12], [148, "#c7a476", 5]]) {
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.strokeRect(inset, inset, 1536 - inset * 2, 1024 - inset * 2);
   }
-
-  const medallion = (x, y, size) => {
-    context.save();
-    context.translate(x, y);
-    context.rotate(Math.PI / 4);
-    context.fillStyle = "#8c2b2c";
-    context.strokeStyle = "#d6a45a";
-    context.lineWidth = 6;
-    context.fillRect(-size, -size, size * 2, size * 2);
-    context.strokeRect(-size, -size, size * 2, size * 2);
-    context.fillStyle = "#1f2c4d";
-    context.fillRect(-size * 0.55, -size * 0.55, size * 1.1, size * 1.1);
-    context.fillStyle = "#d6a45a";
-    context.fillRect(-size * 0.18, -size * 0.18, size * 0.36, size * 0.36);
-    context.restore();
+  const flower = (x, y, r, tone = "#c7a77b") => {
+    ctx.save(); ctx.translate(x, y); ctx.fillStyle = tone;
+    for (let p = 0; p < 8; p++) {
+      ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.ellipse(r * 0.5, 0, r * 0.48, r * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "#3d4845"; ctx.beginPath(); ctx.arc(0, 0, r * 0.24, 0, 7); ctx.fill(); ctx.restore();
   };
-  medallion(512, 360, 110);
-
-  for (const [x, y] of [[200, 200], [824, 200], [200, 520], [824, 520]]) {
-    medallion(x, y, 34);
+  for (let y = 185; y < 850; y += 62) {
+    for (let x = 185; x < 1350; x += 68) {
+      flower(x + (y % 124 > 60 ? 25 : 0), y, 14, random() > 0.4 ? "#c5a17b" : "#424e4a");
+      ctx.strokeStyle = "#af805c"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 35, y - 35, x + 65, y); ctx.stroke();
+    }
   }
-
+  for (let x = 90; x < 1460; x += 48) { flower(x, 94, 20); flower(x, 930, 20); }
+  for (let y = 140; y < 900; y += 48) { flower(94, y, 20); flower(1442, y, 20); }
+  ctx.save(); ctx.translate(768, 512); ctx.scale(1.2, 1);
+  for (const [r, fill] of [[215, "#cfb186"], [200, "#3c4c4d"], [165, "#ad7658"], [148, "#814438"], [75, "#c5a17b"]]) {
+    ctx.beginPath();
+    for (let i = 0; i <= 32; i++) {
+      const angle = i / 32 * Math.PI * 2, radius = i % 2 ? r * 0.84 : r;
+      if (!i) ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      else ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+    ctx.fillStyle = fill; ctx.fill();
+  }
+  flower(0, 0, 55); ctx.restore();
+  // Fine weft and irregular wear keep the pattern from reading as flat vector art.
+  for (let y = 0; y < 1024; y += 2) { ctx.fillStyle = `rgba(230,214,184,${0.04 + random() * 0.08})`; ctx.fillRect(0, y, 1536, 1); }
+  for (let i = 0; i < 36000; i++) { ctx.fillStyle = random() > 0.5 ? "#d2b79525" : "#322e2720"; ctx.fillRect(random() * 1536, random() * 1024, 1 + random() * 3, 1); }
   return toTexture(canvas);
 }
 
@@ -328,8 +350,8 @@ export function signTexture() {
   const wordWidth = context.measureText("SHARK TANK").width;
   const left = (1024 - (aiWidth + gap + wordWidth)) / 2;
   context.shadowColor = "#39e0c8";
-  context.shadowBlur = 28;
-  context.fillStyle = "#f6c55b";
+  context.shadowBlur = 0;
+  context.fillStyle = "#b7a48a";
   context.fillText("AI", left, 132);
   context.fillStyle = "#e9fffb";
   context.fillText("SHARK TANK", left + aiWidth + gap, 132);
@@ -388,9 +410,8 @@ function wrapText(context, text, maxWidth) {
 export function createBoardTexture() {
   const [canvas, context] = makeCanvas(1024, 1280);
   const texture = toTexture(canvas);
-  let token = 0;
 
-  function draw(pitch, iconImage) {
+  function draw(pitch) {
     const accent = pitch.founder?.accent || "#39e0c8";
     context.fillStyle = "#f5f3ef";
     context.fillRect(0, 0, 1024, 1280);
@@ -413,31 +434,6 @@ export function createBoardTexture() {
       .slice(0, 2)
       .forEach((line, index) => context.fillText(line, 512, tagTop + index * 44));
 
-    const gridTop = tagTop + 130;
-    const tile = 170;
-    const gap = 26;
-    const columns = 4;
-    const rows = 3;
-    const left = (1024 - (columns * tile + (columns - 1) * gap)) / 2;
-    const colors = [accent, "#2c303a", shadeHex(accent, -0.35)];
-
-    for (let row = 0; row < rows; row += 1) {
-      for (let column = 0; column < columns; column += 1) {
-        const x = left + column * (tile + gap);
-        const y = gridTop + row * (tile + gap);
-        context.fillStyle = "rgba(0,0,0,0.08)";
-        context.fillRect(x + 6, y + 10, tile, tile);
-        context.fillStyle = "#ffffff";
-        context.fillRect(x, y, tile, tile);
-        context.fillStyle = colors[(row + column) % colors.length];
-        context.fillRect(x, y + tile - 14, tile, 14);
-
-        if (iconImage[(row + column) % colors.length]) {
-          context.drawImage(iconImage[(row + column) % colors.length], x + 35, y + 26, tile - 70, tile - 70);
-        }
-      }
-    }
-
     context.font = "700 30px 'Instrument Sans', sans-serif";
     context.fillStyle = "#8a8690";
     context.textAlign = "left";
@@ -450,24 +446,6 @@ export function createBoardTexture() {
 
   return {
     texture,
-    setPitch(pitch) {
-      token += 1;
-      const current = token;
-      const accent = pitch.founder?.accent || "#39e0c8";
-      const colors = [accent, "#2c303a", shadeHex(accent, -0.35)];
-      const images = [];
-      draw(pitch, images);
-
-      colors.forEach((color, index) => {
-        const image = new Image();
-        image.onload = () => {
-          if (current === token) {
-            images[index] = image;
-            draw(pitch, images);
-          }
-        };
-        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSvg(pitch.icon, color))}`;
-      });
-    },
+    setPitch(pitch) { draw(pitch); },
   };
 }

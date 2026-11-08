@@ -6,6 +6,7 @@
 // "joint at zero" means the limb hangs straight down, as it does procedurally.
 
 import * as THREE from "three";
+import { surfaceTexture } from "./textures.js";
 
 // Bone -> procedural joint. Bones that share a joint keep their rest offset.
 const BONE_TO_JOINT = {
@@ -94,6 +95,22 @@ function matchSkinTone(model, tone) {
 }
 
 export function createRetarget(model, { root, joints, skinTone = null }) {
+  const pores = surfaceTexture("skin");
+  const weave = surfaceTexture("fabric");
+  model.traverse(node => {
+    if (!node.isMesh) return;
+    // SkeletonUtils preserves material references; keep each actor's finish local.
+    const finish = source => {
+      const material = source.clone();
+      if (/skin|anatomy/i.test(material.name) && !/crease/i.test(material.name)) {
+        material.bumpMap = pores; material.bumpScale = 0.00016; material.roughness = 0.54;
+      } else if (/suit|shirt|jeans|dress|fabric|cotton/i.test(material.name)) {
+        material.bumpMap = weave; material.bumpScale = 0.0006; material.roughness = Math.max(material.roughness, 0.72);
+      }
+      return material;
+    };
+    node.material = Array.isArray(node.material) ? node.material.map(finish) : finish(node.material);
+  });
   if (skinTone) {
     matchSkinTone(model, skinTone);
   }
@@ -114,6 +131,14 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
   }
 
   const byName = Object.fromEntries(bones.map((entry) => [entry.name, entry]));
+  // Bring the imported skull closer to the collar without scaling the face or
+  // modifying shared geometry. Skin weights blend the shortened neck naturally.
+  const skull = byName.head?.bone;
+  if (skull && byName.neck && !model.userData.neckFitted) {
+    const length = skull.position.length();
+    if (length > 0.05) skull.position.multiplyScalar((length - Math.min(0.018, length * 0.2)) / length);
+    model.userData.neckFitted = true;
+  }
   const head = new THREE.Vector3();
   const tail = new THREE.Vector3();
 
@@ -183,6 +208,8 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
     }
   }
 
+  let mouth = 0;
+  let eyelids = 0;
   const expression = { smile: 0, frown: 0, targetSmile: 0, targetFrown: 0 };
 
   return {
@@ -212,13 +239,15 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
       }
 
       const talk = speaking ? 0.25 + 0.75 * Math.abs(Math.sin(time * 10.5 + Math.sin(time * 3.3) * 2.2)) : 0;
-      setMorph("mouthOpen", talk * 0.85);
-      setMorph("blink", blinking ? 1 : 0);
+      mouth += (talk * 0.38 - mouth) * (1 - Math.exp(-dt * 22));
+      eyelids += ((blinking ? 1 : 0) - eyelids) * (1 - Math.exp(-dt * (blinking ? 55 : 22)));
+      setMorph("mouthOpen", mouth);
+      setMorph("blink", eyelids);
       const blend = 1 - Math.exp(-dt * 4);
       expression.smile += (expression.targetSmile - expression.smile) * blend;
       expression.frown += (expression.targetFrown - expression.frown) * blend;
-      setMorph("smile", expression.smile * 0.8);
-      setMorph("frown", expression.frown * 0.7);
+      setMorph("smile", expression.smile * 0.4);
+      setMorph("frown", expression.frown * 0.4);
     },
   };
 }
