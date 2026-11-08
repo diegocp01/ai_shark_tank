@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures.mjs";
 
 // Tiny valid stand-in isolates viewer interactions from a changing sculpt.
 // The actual exported GLB is validated separately in the asset workflow.

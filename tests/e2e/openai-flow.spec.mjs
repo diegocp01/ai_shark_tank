@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.mjs';
 
 // Deterministic local audio fixture: these browser tests never spend API credits.
 function wav(){
@@ -18,7 +18,7 @@ test('OpenAI idea flow, disclosure and server audio play without exposing creden
  await page.route('**/api/episodes',async route=>{const response=await route.fetch();const payload=await response.json();await route.fulfill({json:{...payload,speech:{token:'local-test-session'}}});});
  await page.route('**/api/speech',route=>{requests.push(route.request().postDataJSON());return route.fulfill({contentType:'audio/wav',body:wav()});});
  await page.goto('/?quality=low');
- await expect(page.locator('#production-note')).toContainText('OpenAI-generated');
+ await expect(page.locator('#production-note')).toContainText('OpenAI + Anthropic');
  await page.getByText('Pitch your own idea').click();await page.getByRole('button',{name:'Invent an idea'}).click();
  await expect(page.getByLabel('Your startup idea')).toHaveValue('A portable tool library for apartment renters');
  await page.getByRole('button',{name:'Enter the tank'}).click();

@@ -1,3 +1,5 @@
+import { assertScriptedServer } from '../offline.js';
+await assertScriptedServer();
 import { chromium, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal'] });

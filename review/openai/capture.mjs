@@ -1,3 +1,5 @@
+import { assertScriptedServer } from '../offline.js';
+await assertScriptedServer();
 import { chromium, expect } from '@playwright/test';
 import { readFile, writeFile } from 'node:fs/promises';
 const payload=JSON.parse(await readFile('review/openai/generated-show.json','utf8'));

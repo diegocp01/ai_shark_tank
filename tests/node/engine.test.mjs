@@ -16,7 +16,7 @@ const GOLDEN = [
     seed: 1,
     dealType: "Deal",
     sharkIds: ["max"],
-    terms: "$300,000 for 11.5%, plus a 3% revenue royalty until Max recoups",
+    terms: "$300,000 for 11.5%, plus a 3% revenue royalty until Daymond John recoups",
     beats: 25,
   },
   { pitchId: "ledgerloop", seed: 7, dealType: "Multi-Shark Deal", sharkIds: ["max", "rex"], terms: "$300,000 for 13.5%", beats: 26 },
@@ -30,7 +30,7 @@ const GOLDEN = [
     seed: 2,
     dealType: "Deal",
     sharkIds: ["max"],
-    terms: "$100,000 for 35.5%, plus a 3% revenue royalty until Max recoups",
+    terms: "$100,000 for 35.5%, plus a 3% revenue royalty until Daymond John recoups",
     beats: 25,
   },
 ];
@@ -89,7 +89,7 @@ describe("scripted engine: golden episodes", () => {
     const lines = episode.beats.map((beat) => `${beat.speakerId}:${beat.kind}`);
 
     assert.deepEqual(lines.slice(0, 4), ["narrator:narration", "founder:entrance", "founder:pitch", "founder:pitch"]);
-    assert.equal(episode.beats.at(-1).text, "Barklight Labs leaves the tank with $500,000 for 9.5% from Wild Wes. That values the company at $5.26 million, 16% under the ask.");
+    assert.equal(episode.beats.at(-1).text, "Barklight Labs leaves the tank with $500,000 for 9.5% from Mark Cuban. That values the company at $5.26 million, 16% under the ask.");
     assert.equal(episode.beats.find((beat) => beat.kind === "counter").text.includes("Would you do $500,000 for 9.5%?"), true);
   });
 });

@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.mjs";
 
 // Every episode is deterministic, so these assertions are exact: the same pitch
 // and seed always produce the same lines, offers, and verdict.
@@ -68,7 +68,7 @@ test.describe("title screen", () => {
 });
 
 test.describe("full episode", () => {
-  test("Barklight seed 1 plays from the entrance to a handshake with Wild Wes", async ({ page }, testInfo) => {
+  test("Barklight seed 1 plays from the entrance to a handshake with Mark Cuban", async ({ page }, testInfo) => {
     await page.goto(`/?${FAST}`);
     await enterTheTank(page);
 
@@ -80,7 +80,7 @@ test.describe("full episode", () => {
     await page.screenshot({ path: testInfo.outputPath("barklight-verdict.png") });
 
     await expect(dialog.locator(".slate-stamp")).toHaveText("Deal");
-    await expect(dialog.locator("h2")).toHaveText("Wild Wes invests in Barklight Labs");
+    await expect(dialog.locator("h2")).toHaveText("Mark Cuban invests in Barklight Labs");
     await expect(dialog.locator(".slate-terms")).toHaveText("$500,000 for 9.5%");
     await expect(dialog.locator(".slate-note")).toHaveText("16% below the asking valuation of $6.25M.");
     await expect(dialog.locator(".slate-facts")).toContainText("Feasibility 44%");
@@ -88,10 +88,10 @@ test.describe("full episode", () => {
     await dialog.getByRole("button", { name: "Close verdict" }).click();
     await expect(page.locator(".stage")).toHaveAttribute("data-shot", "handshake");
     await expect(page.locator(".stage")).toHaveAttribute("data-founder", "handshake");
-    await expect(page.locator(".lower-third")).toContainText("Deal · Wild Wes");
+    await expect(page.locator(".lower-third")).toContainText("Deal · Mark Cuban");
     await expect(page.locator("#progress")).toHaveAttribute("aria-valuetext", "Line 25 of 25");
     await expect(page.locator("#transcript li")).toHaveCount(25);
-    await expect(page.locator("#transcript li").last()).toContainText("Barklight Labs leaves the tank with $500,000 for 9.5% from Wild Wes.");
+    await expect(page.locator("#transcript li").last()).toContainText("Barklight Labs leaves the tank with $500,000 for 9.5% from Mark Cuban.");
   });
 
   test("the end slate downloads a markdown feasibility report", async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe("full episode", () => {
     const dialog = await waitForVerdict(page);
 
     await expect(dialog.locator(".slate-stamp")).toHaveText("Multi-shark deal");
-    await expect(dialog.locator("h2")).toHaveText("Max and Rex invest in LedgerLoop");
+    await expect(dialog.locator("h2")).toHaveText("Daymond John and Kevin O’Leary invest in LedgerLoop");
 
     const [download] = await Promise.all([page.waitForEvent("download"), dialog.getByRole("button", { name: "Download report" }).click()]);
     const content = await readFile(await download.path(), "utf8");
@@ -166,7 +166,7 @@ test.describe("playback", () => {
 
     await page.getByRole("button", { name: "Skip to verdict" }).click();
     const dialog = await waitForVerdict(page);
-    await expect(dialog.locator("h2")).toHaveText("Vera invests in Odd Sox Club");
+    await expect(dialog.locator("h2")).toHaveText("Barbara Corcoran invests in Odd Sox Club");
 
     await dialog.getByRole("button", { name: "Watch again" }).click();
     await expect(dialog).toBeHidden();
@@ -206,7 +206,7 @@ test.describe("playback", () => {
     const dialog = await waitForVerdict(page);
     const spoken = await page.evaluate(() => window.__spoken);
     expect(spoken).toHaveLength(23);
-    expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Luna. That values the company at $6.25 million, 38% under the ask.");
+    expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Lori Greiner. That values the company at $6.25 million, 38% under the ask.");
 
     await dialog.getByRole("button", { name: "Close verdict" }).click();
     await page.getByRole("button", { name: "Turn voices off" }).press("Enter");
@@ -237,7 +237,7 @@ test.describe("phone", () => {
 
     await page.getByRole("button", { name: "Enter the tank" }).tap();
     const dialog = await waitForVerdict(page);
-    await expect(dialog.locator("h2")).toHaveText("Wild Wes and Vera invest in Dumpling Dynasty");
+    await expect(dialog.locator("h2")).toHaveText("Mark Cuban and Barbara Corcoran invest in Dumpling Dynasty");
 
     const showOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(showOverflow).toBeLessThanOrEqual(0);

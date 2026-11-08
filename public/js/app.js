@@ -420,6 +420,8 @@ function renderVerdict() {
         : `${Math.abs(delta)}% ${delta < 0 ? "below" : "above"} the asking valuation of ${formatMoneyShort(result.askValuationUsd)}.`;
   } else if (result.declinedOffer) {
     note = `${pitch.founder.name} turned down ${formatOfferFull(result.declinedOffer)}.`;
+  } else if (result.declinedFrom?.length) {
+    note = `${pitch.founder.name} declined the available offers.`;
   }
 
   elements.verdict.innerHTML = `
@@ -931,7 +933,7 @@ async function boot() {
     },
   }) : createVoice({ sharks: state.config.sharks });
   elements.inventButton.hidden = !state.config.generation;
-  elements.productionNote.textContent = state.config.generation ? "OpenAI-generated ideas, decks and voices. Simulated businesses and investor decisions." : "Scripted simulation · device voices";
+  elements.productionNote.textContent = state.config.generation ? "AI portrayals · OpenAI + Anthropic · synthetic voices · no real statements or endorsements." : "Scripted AI portrayals · device voices · no real statements or endorsements.";
   if (state.config.generation) elements.seedInput.closest("label").title = "Controls the simulated investor decisions. Live generations vary.";
 
   const url = readUrl();

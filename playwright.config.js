@@ -27,11 +27,12 @@ export default defineConfig({
   webServer: {
     command: "node server.js",
     url: `${baseURL}/api/health`,
-    reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
+    reuseExistingServer: false,
     timeout: 30_000,
     env: {
       PORT: String(PORT),
       AI_SHARK_TANK_MODE: "mock",
+      AI_SHARK_TANK_TESTING: "1",
       AI_SHARK_TANK_STATS_PATH: path.join(os.tmpdir(), `ai-shark-tank-e2e-${PORT}.json`),
     },
   },

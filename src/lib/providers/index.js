@@ -2,17 +2,8 @@
 // script with the same shape (see README "Episode format"), so the browser never
 // needs to know where an episode came from.
 //
-// Only the deterministic scripted provider exists today. A live model-backed
-// provider can be added later by implementing the same interface:
-//
-//   {
-//     id: "live",
-//     label: "Live agents",
-//     live: true,
-//     async createEpisode({ pitchId, idea, seed }) { return episode; },
-//   }
-//
-// and selecting it in getEpisodeProvider().
+// The default is always offline. server.js explicitly injects the multi-provider
+// live implementation only when configured for live mode.
 
 import { createEpisode } from "../scriptedEngine.js";
 

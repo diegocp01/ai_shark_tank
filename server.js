@@ -1,3 +1,5 @@
+import { createAnthropicClient } from "./src/lib/anthropic/client.js";
+import { describeCast } from "./src/lib/liveEpisode.js";
 import express from "express";
 import dotenv from "dotenv";
 import { AIError, createOpenAIClient } from "./src/lib/openai/client.js";
@@ -228,11 +230,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   dotenv.config({ path: [path.join(__dirname, ".env.local"), path.join(__dirname, ".env")], quiet: true });
   const port = Number.parseInt(process.env.PORT || "5050", 10);
   const mode = process.env.AI_SHARK_TANK_MODE || (process.env.OPENAI_API_KEY ? "openai" : "mock");
-  if (!["openai", "mock"].includes(mode)) throw new Error("AI_SHARK_TANK_MODE must be openai or mock.");
+  if (!["live", "openai", "mock"].includes(mode)) throw new Error("AI_SHARK_TANK_MODE must be live or mock (openai is a live alias).");
   let options = {};
-  if (mode === "openai") {
+  if (process.env.AI_SHARK_TANK_TESTING === "1" && mode !== "mock") throw new Error("Tests must run in mock mode.");
+  if (mode !== "mock") {
     const client = createOpenAIClient({ apiKey: process.env.OPENAI_API_KEY });
-    options = { ...createLiveProviders(client), speechService: createSpeechService(client), aiSettings: client.settings };
+    const anthropic = createAnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY });
+    options = { ...createLiveProviders(client, anthropic), speechService: createSpeechService(client), aiSettings: { ...client.settings, cast: describeCast({ openai: client, anthropic }) } };
   }
   createApp(options).listen(port, "127.0.0.1", () => {
     console.log(`AI Shark Tank studio running at http://127.0.0.1:${port}`);

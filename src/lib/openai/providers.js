@@ -1,6 +1,7 @@
+import { createLiveEpisode, assertLiveConfigured } from "../liveEpisode.js";
 import { randomUUID } from "node:crypto";
 import { createIdeaPitch } from "../ideaPitch.js";
-import { createEpisodeFromPitch, resolvePitch } from "../scriptedEngine.js";
+import { resolvePitch } from "../scriptedEngine.js";
 import { createModelDeckProvider } from "../pitchDeck.js";
 
 const string = (maxLength = 240) => ({ type: "string", minLength: 1, maxLength });
@@ -16,10 +17,12 @@ export const PITCH_SCHEMA = object({
 });
 export const DECK_SCHEMA = object({ title: string(160), slides: { type: "array", minItems: 1, maxItems: 8, items: object({ title: string(160), beatId: string(30), html: string(40000) }) } });
 
-export function createLiveProviders(client) {
+export function createLiveProviders(client, anthropic) {
   const episodeProvider = {
-    id: "openai-pitch", label: "OpenAI pitches · simulated judges", live: true,
+    id: "multi-model", label: "OpenAI + Anthropic cast", live: true,
     async createEpisode(request) {
+      const clients = { openai: client, anthropic };
+      assertLiveConfigured(clients);
       let pitch = resolvePitch(request);
       let generation = null;
       if (request.idea) {
@@ -30,10 +33,8 @@ export function createLiveProviders(client) {
         pitch = { ...createIdeaPitch(request.idea, request.seed), ...generated.data };
         generation = generated.metadata;
       }
-      const episode = createEpisodeFromPitch(pitch, request.seed);
-      episode.id = `${episode.id}-${randomUUID().slice(0, 8)}`;
-      episode.provider = "openai-pitch";
-      episode.generation = generation;
+      const episode = await createLiveEpisode(pitch, request.seed, clients);
+      episode.generation.pitch = generation;
       return episode;
     },
   };

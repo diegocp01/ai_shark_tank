@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.mjs";
 import { readFile } from "node:fs/promises";
 
 test("HTML deck is generated, rendered in the set, synced, downloadable and reset", async ({ page }, testInfo) => {

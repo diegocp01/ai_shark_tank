@@ -56,7 +56,7 @@ describe("POST /api/episodes", () => {
     assert.deepEqual(first.body.deck, second.body.deck);
     assert.equal(first.body.deck.provider.id, "mock-html");
     assert.equal(first.body.deck.slides.length, 4);
-    assert.equal(first.body.episode.result.headline, "Wild Wes invests in Barklight Labs");
+    assert.equal(first.body.episode.result.headline, "Mark Cuban invests in Barklight Labs");
     assert.equal(first.body.episode.provider, "scripted");
   });
 
@@ -80,7 +80,7 @@ describe("POST /api/episodes", () => {
     assert.equal(body.allTime.totalEpisodes, archive.stats.totalEpisodes);
     assert.equal(last.episodeId, "odd-sox-s1");
     assert.equal(last.outcome, "Deal");
-    assert.deepEqual(last.investors, ["Vera The Brand Guru"]);
+    assert.deepEqual(last.investors, ["Barbara Corcoran"]);
     assert.equal(archive.stats.sourceCounts.scripted >= 1, true);
   });
 
