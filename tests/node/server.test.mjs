@@ -53,6 +53,9 @@ describe("POST /api/episodes", () => {
     const second = await request(app).post("/api/episodes").send({ pitchId: "barklight", seed: 1 }).expect(200);
 
     assert.deepEqual(first.body.episode, second.body.episode);
+    assert.deepEqual(first.body.deck, second.body.deck);
+    assert.equal(first.body.deck.provider.id, "mock-html");
+    assert.equal(first.body.deck.slides.length, 4);
     assert.equal(first.body.episode.result.headline, "Wild Wes invests in Barklight Labs");
     assert.equal(first.body.episode.provider, "scripted");
   });
@@ -149,4 +152,15 @@ describe("static routes", () => {
     const missing = await request(app).get("/api/live-episode").expect(404);
     assert.equal(missing.body.detail, "Not found.");
   });
+});
+
+
+it("accepts a replacement deck provider without changing the episode engine", async () => {
+  const deckProvider = { id: "test-adapter", label: "Test", live: false, async generateDeck({ episode }) {
+    return { title: "Custom provider", slides: [{ title: "Hello", beatId: episode.beats[0].id, html: "<h1>Hello sharks</h1>" }] };
+  } };
+  const { body } = await request(createApp({ deckProvider })).post("/api/episodes").send({ pitchId: "barklight", seed: 1 }).expect(200);
+  assert.equal(body.episode.provider, "scripted");
+  assert.equal(body.deck.provider.id, "test-adapter");
+  assert.equal(body.deck.slides[0].html, "<h1>Hello sharks</h1>");
 });

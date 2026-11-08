@@ -21,8 +21,9 @@ export function createVoice({ sharks = [] } = {}) {
       return;
     }
 
-    const english = synth.getVoices().filter((voice) => /^en(-|_|$)/i.test(voice.lang));
-    voices = english.length ? english : synth.getVoices();
+    const local = synth.getVoices().filter((voice) => voice.localService === true);
+    const english = local.filter((voice) => /^en(-|_|$)/i.test(voice.lang));
+    voices = english.length ? english : local;
   }
 
   if (supported) {
@@ -42,8 +43,10 @@ export function createVoice({ sharks = [] } = {}) {
 
   return {
     supported,
+    get available() { loadVoices(); return voices.length > 0; },
     speak(speakerId, text, speed = 1) {
-      if (!supported || !text) {
+      loadVoices();
+      if (!supported || !voices.length || !text) {
         return Promise.resolve();
       }
 

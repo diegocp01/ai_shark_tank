@@ -27,10 +27,11 @@ export default defineConfig({
   webServer: {
     command: "node server.js",
     url: `${baseURL}/api/health`,
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: 30_000,
     env: {
       PORT: String(PORT),
+      AI_SHARK_TANK_MODE: "mock",
       AI_SHARK_TANK_STATS_PATH: path.join(os.tmpdir(), `ai-shark-tank-e2e-${PORT}.json`),
     },
   },
@@ -39,9 +40,10 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
         viewport: { width: 1440, height: 900 },
         // Software WebGL so the 3D studio renders in headless runs.
-        launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] },
+        launchOptions: { args: process.env.PLAYWRIGHT_GPU === "1" ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] },
       },
     },
   ],

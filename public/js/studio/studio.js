@@ -17,7 +17,7 @@ import { addStudioLights, createSet, FOUNDER_MARK, seatTransform } from "./set.j
 const HALLWAY_ENTRY = new THREE.Vector3(11.2, 0, 0);
 const HALLWAY_EXIT = new THREE.Vector3(13.5, 0, 0);
 const SEATED_HEAD_Y = 1.24;
-const LOBBY_CAMERA = { pos: [7.0, 1.55, -3.8], target: [1.0, 1.05, 1.2], fov: 38 };
+const LOBBY_CAMERA = { pos: [6.9, 1.85, -5.7], target: [1.1, 1.0, 0.2], fov: 37 };
 const STANDING_HEAD_Y = 1.66;
 
 // Each shark's resting body language.
@@ -31,7 +31,7 @@ const RESTING_POSE = {
 
 // Shots are framed for 16:9. On narrower screens (portrait phones) widen the
 // vertical field of view so most of the 16:9 width still fits.
-function fitFov(fov, aspect) {
+function fitFov(fov, aspect, maxFov = 70) {
   const wide = 16 / 9;
 
   if (aspect >= wide) {
@@ -41,7 +41,7 @@ function fitFov(fov, aspect) {
   const half = THREE.MathUtils.degToRad(fov / 2);
   const horizontal = Math.atan(Math.tan(half) * wide);
   const fitted = 2 * Math.atan((Math.tan(horizontal) * 0.62) / aspect);
-  return Math.min(70, Math.max(fov, THREE.MathUtils.radToDeg(fitted)));
+  return Math.min(maxFov, Math.max(fov, THREE.MathUtils.radToDeg(fitted)));
 }
 
 // Rigged character models, loaded once. A missing or unrigged file just
@@ -74,7 +74,7 @@ function disposeTree(object) {
       const materials = Array.isArray(child.material) ? child.material : [child.material];
 
       for (const material of materials) {
-        material.map?.dispose();
+        for (const value of Object.values(material)) if (value?.isTexture) value.dispose();
         material.dispose();
       }
     }
@@ -118,7 +118,7 @@ export function createStudio({ mount }) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Neutral tone mapping keeps skin hue in bright key light (ACES bleaches it).
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = quality === "high";
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   mount.append(renderer.domElement);
@@ -128,7 +128,7 @@ export function createStudio({ mount }) {
   scene.fog = new THREE.Fog("#070403", 16, 34);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.32;
+  scene.environmentIntensity = 0.48;
 
   const camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.05, 80);
   const set = createSet({ quality });
@@ -142,7 +142,7 @@ export function createStudio({ mount }) {
     const target = new THREE.WebGLRenderTarget(16, 16, { samples: 4, type: THREE.HalfFloatType });
     composer = new EffectComposer(renderer, target);
     composer.addPass(new RenderPass(scene, camera));
-    bloom = new UnrealBloomPass(new THREE.Vector2(16, 16), 0.32, 0.5, 0.93);
+    bloom = new UnrealBloomPass(new THREE.Vector2(16, 16), 0.1, 0.35, 1.2);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
   }
@@ -196,7 +196,7 @@ export function createStudio({ mount }) {
       case "profile":
         return { pos: [3.1, 1.02, 5.7], target: [0.4, 1.0, -0.7], fov: 34, dolly: 0.35 };
       case "pitch-wide":
-        return { pos: [-0.7, 2.25, 0.55], target: [5.8, 1.15, -0.45], fov: 40, dolly: 0.35 };
+        return { pos: [-1.1, 1.64, -0.6], target: [5.95, 1.48, 1.05], fov: 43, dolly: 0.12 };
       case "hallway":
         return { pos: [-0.35, 1.8, 0.7], target: [9.5, 1.32, -0.05], fov: 23, dolly: 0.3 };
       case "founder-close":
@@ -234,7 +234,7 @@ export function createStudio({ mount }) {
       }
       case "establishing":
       default:
-        return { pos: [2.8, 3.05, 8.4], target: [2.4, 0.85, -0.2], fov: 38, dolly: 0.7 };
+        return { pos: [2.9, 2.2, 6.8], target: [3.1, 1.0, -0.45], fov: 47, dolly: 0.16 };
     }
   }
 
@@ -245,7 +245,7 @@ export function createStudio({ mount }) {
     shot.focus = focusId;
     shot.from.fromArray(spec.pos);
     shot.target.fromArray(spec.target);
-    shot.drift.copy(shot.target).sub(shot.from).normalize().multiplyScalar(spec.dolly);
+    shot.drift.copy(shot.target).sub(shot.from).normalize().multiplyScalar(spec.dolly * 0.5);
     shot.fov = spec.fov;
     shot.start = time;
     mount.dataset.shot = resolved;
@@ -255,8 +255,8 @@ export function createStudio({ mount }) {
   function updateCamera(cut = false) {
     if (mood === "lobby") {
       // A slow drift across the panel from the founder's side of the room.
-      const sway = Math.sin(time * 0.06);
-      camera.position.set(LOBBY_CAMERA.pos[0] + sway * 0.3, LOBBY_CAMERA.pos[1] + Math.sin(time * 0.17) * 0.05, LOBBY_CAMERA.pos[2] + sway * 0.5);
+      const sway = Math.sin(time * 0.035);
+      camera.position.set(LOBBY_CAMERA.pos[0] + sway * 0.12, LOBBY_CAMERA.pos[1] + Math.sin(time * 0.1) * 0.01, LOBBY_CAMERA.pos[2] + sway * 0.16);
       camera.fov = fitFov(LOBBY_CAMERA.fov, camera.aspect);
       camera.lookAt(LOBBY_CAMERA.target[0], LOBBY_CAMERA.target[1], LOBBY_CAMERA.target[2] + sway * 0.25);
       camera.updateProjectionMatrix();
@@ -266,7 +266,7 @@ export function createStudio({ mount }) {
     const progress = easeInOut(Math.min(1, (time - shot.start) / 9));
     camera.position.copy(shot.from).addScaledVector(shot.drift, progress);
 
-    const fov = fitFov(shot.fov, camera.aspect);
+    const fov = fitFov(shot.fov, camera.aspect, shot.name === "pitch-wide" ? 82 : 70);
 
     if (cut || camera.fov !== fov) {
       camera.fov = fov;
@@ -336,18 +336,27 @@ export function createStudio({ mount }) {
     mount.dataset.founder = mode;
   }
 
-  function updateFounder() {
+  const previousFounderPosition = new THREE.Vector3();
+
+  function updateFounder(dt) {
     if (!founder || !["walking", "exit", "approach"].includes(founderMotion.mode)) {
       return;
     }
 
     const progress = Math.min(1, (time - founderMotion.start) / founderMotion.duration);
-    founder.root.position.lerpVectors(founderMotion.from, founderMotion.to, easeInOut(progress));
+    // Brief acceleration and deceleration, with a steady walking pace between.
+    const ramp = 0.15;
+    const travel = progress < ramp ? progress * progress / (2 * ramp * (1 - ramp))
+      : progress > 1 - ramp ? 1 - (1 - progress) ** 2 / (2 * ramp * (1 - ramp))
+      : (progress - ramp / 2) / (1 - ramp);
+    previousFounderPosition.copy(founder.root.position);
+    founder.root.position.lerpVectors(founderMotion.from, founderMotion.to, travel);
+    founder.setWalkSpeed(founder.root.position.distanceTo(previousFounderPosition) / Math.max(dt, 0.001));
     const heading = founderMotion.to.clone().sub(founderMotion.from);
 
     if (heading.lengthSq() > 0.0001) {
       const yaw = Math.atan2(heading.x, heading.z);
-      founder.root.rotation.y += (yaw - founder.root.rotation.y) * 0.25;
+      founder.root.rotation.y += Math.atan2(Math.sin(yaw - founder.root.rotation.y), Math.cos(yaw - founder.root.rotation.y)) * (1 - Math.exp(-dt * 10));
     }
 
     if (progress >= 1) {
@@ -392,10 +401,10 @@ export function createStudio({ mount }) {
     const dt = Math.min(0.1, sinceFrame === Infinity ? delta : sinceFrame);
     sinceFrame = 0;
     time += dt;
-    updateFounder();
+    updateFounder(dt);
 
     if (founder && founderMotion.mode === "standing" && !handshakeId) {
-      founder.root.rotation.y += (founderMotion.face - founder.root.rotation.y) * 0.12;
+      founder.root.rotation.y += Math.atan2(Math.sin(founderMotion.face - founder.root.rotation.y), Math.cos(founderMotion.face - founder.root.rotation.y)) * (1 - Math.exp(-dt * 6));
     }
 
     refreshLooks();
@@ -448,7 +457,7 @@ export function createStudio({ mount }) {
     setPitch(pitch) {
       const look = {
         top: "suit",
-        suit: pitch.founder.suit,
+        suit: new THREE.Color(pitch.founder.suit).lerp(new THREE.Color("#30343a"), 0.3).getStyle(),
         skin: pitch.founder.skin,
         hair: pitch.founder.hair,
         hairStyle: pitch.founder.hairStyle,
@@ -478,6 +487,15 @@ export function createStudio({ mount }) {
 
       set.board.setPitch(pitch);
       mount.dataset.pitch = pitch.id || "custom";
+    },
+    setDeck(canvases) {
+      set.deck.setSlides(canvases);
+      mount.dataset.deckSlides = String(canvases.length);
+      mount.dataset.deckSlide = canvases.length ? "0" : "";
+    },
+    showDeckSlide(index) {
+      set.deck.showSlide(index);
+      mount.dataset.deckSlide = String(index);
     },
     placeFounder(position) {
       if (!founder) {
@@ -568,7 +586,7 @@ export function createStudio({ mount }) {
       }
 
       if (beat.kind === "pitch") {
-        return variant % 2 ? { name: "pitch-wide" } : { name: "founder-close", variant };
+        return { name: "pitch-wide" };
       }
 
       if (beat.kind === "question") {
@@ -636,6 +654,11 @@ function createNullStudio(mount) {
     setPitch(pitch) {
       mount.dataset.pitch = pitch.id || "custom";
     },
+    setDeck(canvases) {
+      mount.dataset.deckSlides = String(canvases.length);
+      mount.dataset.deckSlide = canvases.length ? "0" : "";
+    },
+    showDeckSlide(index) { mount.dataset.deckSlide = String(index); },
     placeFounder(position) {
       mount.dataset.founder = position;
     },

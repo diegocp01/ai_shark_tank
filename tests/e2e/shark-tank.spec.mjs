@@ -6,6 +6,10 @@ import { expect, test } from "@playwright/test";
 
 const FAST = "speed=40";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("ai-shark-tank:voice", "false"));
+});
+
 async function enterTheTank(page) {
   await page.getByRole("button", { name: "Enter the tank" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-view", "show");
@@ -13,7 +17,12 @@ async function enterTheTank(page) {
 
 async function waitForVerdict(page) {
   const dialog = page.locator("dialog.end-card");
-  await expect(dialog).toBeVisible({ timeout: 40_000 });
+  await expect(page.locator("body")).toHaveAttribute("data-playback", "finished", { timeout: 40_000 });
+  if (!await dialog.isVisible()) {
+    // Keyboard activation also verifies access while the transport is hidden.
+    await page.getByRole("button", { name: "Show verdict" }).press("Enter");
+  }
+  await expect(dialog).toBeVisible();
   return dialog;
 }
 
@@ -65,7 +74,7 @@ test.describe("full episode", () => {
 
     await expect(page).toHaveURL(/pitch=barklight&seed=1/);
     await expect(page.locator(".title-screen")).toBeHidden();
-    await expect(page.locator(".onair")).toBeVisible();
+    await expect(page.locator(".onair")).toHaveCount(0);
 
     const dialog = await waitForVerdict(page);
     await page.screenshot({ path: testInfo.outputPath("barklight-verdict.png") });
@@ -148,6 +157,7 @@ test.describe("playback", () => {
     await expect(progress).toHaveAttribute("aria-valuetext", "Line 1 of 26");
     await page.keyboard.press("ArrowRight");
     await expect(progress).toHaveAttribute("aria-valuetext", "Line 2 of 26");
+    await page.getByRole("button", { name: "Show captions" }).click();
     await expect(page.locator(".sub-name")).toHaveText("Theo · Founder");
     await expect(page.locator(".stage")).toHaveAttribute("data-shot", /founder-close|pitch-wide/);
 
@@ -177,7 +187,7 @@ test.describe("playback", () => {
       Object.defineProperty(window, "speechSynthesis", {
         configurable: true,
         value: {
-          getVoices: () => [{ name: "Test Voice", lang: "en-US" }],
+          getVoices: () => [{ name: "Test Voice", lang: "en-US", localService: true }],
           addEventListener() {},
           speak(utterance) {
             window.__spoken.push(utterance.text);
@@ -199,7 +209,7 @@ test.describe("playback", () => {
     expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Luna. That values the company at $6.25 million, 38% under the ask.");
 
     await dialog.getByRole("button", { name: "Close verdict" }).click();
-    await page.getByRole("button", { name: "Turn voices off" }).click();
+    await page.getByRole("button", { name: "Turn voices off" }).press("Enter");
     await expect(page.locator("#toast")).toHaveText("Voices off");
     await expect(page.getByRole("button", { name: "Turn voices on" })).toHaveAttribute("aria-pressed", "false");
   });
@@ -207,6 +217,7 @@ test.describe("playback", () => {
   test("the lobby button leaves the show", async ({ page }) => {
     await page.goto("/?pitch=tidetrack&seed=1");
     await enterTheTank(page);
+    await page.mouse.move(20, 20);
     await page.getByRole("button", { name: "Lobby" }).click();
 
     await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
@@ -232,4 +243,34 @@ test.describe("phone", () => {
     expect(showOverflow).toBeLessThanOrEqual(0);
     await page.screenshot({ path: testInfo.outputPath("phone-verdict.png") });
   });
+});
+
+
+test("TV mode has no idle HUD, no automatic result popup, and no external requests", async ({ page }) => {
+  const external = [];
+  await page.route("**/*", route => {
+    const url = new URL(route.request().url());
+    if (["http:", "https:"].includes(url.protocol) && url.hostname !== "127.0.0.1") {
+      external.push(url.href); return route.abort();
+    }
+    return route.continue();
+  });
+  await page.goto("/?pitch=odd-sox&seed=1&speed=40&autoplay=1");
+  await expect(page.locator("body")).toHaveAttribute("data-view", "show");
+  await expect(page.locator("#caption")).toBeHidden();
+  await expect(page.locator("#lower-third")).toBeHidden();
+  await expect(page.locator(".bug, .onair, .stamp, .confetti")).toHaveCount(0);
+  await page.mouse.move(20, 20);
+  await expect(page.locator("#transport")).toHaveCSS("opacity", "0", { timeout: 6000 });
+  await expect(page.locator("body")).toHaveAttribute("data-playback", "finished", { timeout: 40000 });
+  await expect(page.locator("#verdict")).toBeHidden();
+  await page.mouse.move(50, 50);
+  await page.getByRole("button", { name: "Show captions" }).click();
+  await expect(page.locator("#caption")).toBeVisible();
+  await page.getByRole("button", { name: "Show offer graphics" }).click();
+  await expect(page.locator("#lower-third")).toBeVisible();
+  await page.reload();
+  await expect(page.locator("body")).toHaveAttribute("data-captions", "true");
+  await expect(page.locator("body")).toHaveAttribute("data-graphics", "true");
+  expect(external).toEqual([]);
 });
