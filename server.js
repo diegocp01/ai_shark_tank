@@ -1,3 +1,5 @@
+import { createAnthropicClient } from "./src/lib/anthropic/client.js";
+import { describeCast } from "./src/lib/liveEpisode.js";
 import express from "express";
 import dotenv from "dotenv";
 import { AIError, createOpenAIClient } from "./src/lib/openai/client.js";
@@ -112,12 +114,20 @@ export function createApp({ deckProvider = mockDeckProvider, episodeProvider = g
     res.json({ status: "ok", provider: provider.id });
   });
 
+  function apiAvailability() {
+    if (!provider.live || !generateIdea) return { available: false, reason: "API mode is not configured on this server." };
+    try { provider.assertConfigured?.(); return { available: true, reason: null }; }
+    catch (error) { return { available: false, reason: error instanceof AIError ? error.message : "API mode is not configured." }; }
+  }
+
   app.get("/api/config", (_req, res) => {
     res.json({
       provider: describeProvider(provider),
       deckProvider: describeProvider(deckProvider),
       speech: speechService?.describe() || { provider: "device" },
       generation: aiSettings,
+      cast: aiSettings?.cast || describeCast(),
+      modes: { api: apiAvailability(), test: { available: true } },
       sharks: SHARK_PROFILES.map(toPublicShark),
       pitches: PRESET_PITCHES.map(summarizePitch),
       phases: PHASES,
@@ -148,16 +158,29 @@ export function createApp({ deckProvider = mockDeckProvider, episodeProvider = g
     if (generating >= 2) return res.status(429).json({ detail: "The studio is already preparing a show. Please wait." });
     generating++;
     try {
-      const request = readEpisodeRequest(req.body);
-      const episode = await provider.createEpisode(request);
-      const deck = await createPitchDeck(episode, deckProvider);
+      const mode = req.body?.mode;
+      if (mode !== undefined && !["api", "test"].includes(mode)) throw new RequestError("Choose API or Test.");
+      let request;
+      if (mode === "api") {
+        const availability = apiAvailability();
+        if (!availability.available) throw new AIError(availability.reason, 503);
+        // The model invents the idea inside the production request. The browser
+        // supplies no theme, idea, preset or seed for an API show.
+        const generated = await generateIdea();
+        request = readEpisodeRequest({ idea: generated.idea, seed: DEFAULT_SEED });
+      } else if (mode === "test") {
+        request = readEpisodeRequest({ pitchId: req.body.pitchId || PRESET_PITCHES[0].id, seed: req.body.seed ?? DEFAULT_SEED });
+      } else request = readEpisodeRequest(req.body); // Older programmatic clients.
+      const testMode = mode === "test";
+      const episode = await (testMode ? getEpisodeProvider() : provider).createEpisode(request);
+      const deck = await createPitchDeck(episode, testMode ? mockDeckProvider : deckProvider);
       const archive = await recordEpisode(episode);
       const footer = archive ? formatAllTimeStatsForReport(archive) : "";
 
       res.json({
         episode,
         deck,
-        speech: speechService?.register(episode) || null,
+        speech: !testMode ? speechService?.register(episode) || null : null,
         allTime: archive ? summarizeAllTimeStats(archive) : null,
         download: {
           fileName: buildReportFileName(episode.pitch.startupName),
@@ -228,11 +251,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   dotenv.config({ path: [path.join(__dirname, ".env.local"), path.join(__dirname, ".env")], quiet: true });
   const port = Number.parseInt(process.env.PORT || "5050", 10);
   const mode = process.env.AI_SHARK_TANK_MODE || (process.env.OPENAI_API_KEY ? "openai" : "mock");
-  if (!["openai", "mock"].includes(mode)) throw new Error("AI_SHARK_TANK_MODE must be openai or mock.");
+  if (!["live", "openai", "mock"].includes(mode)) throw new Error("AI_SHARK_TANK_MODE must be live or mock (openai is a live alias).");
   let options = {};
-  if (mode === "openai") {
+  if (process.env.AI_SHARK_TANK_TESTING === "1" && mode !== "mock") throw new Error("Tests must run in mock mode.");
+  if (mode !== "mock") {
     const client = createOpenAIClient({ apiKey: process.env.OPENAI_API_KEY });
-    options = { ...createLiveProviders(client), speechService: createSpeechService(client), aiSettings: client.settings };
+    const anthropic = createAnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY });
+    options = { ...createLiveProviders(client, anthropic), speechService: createSpeechService(client), aiSettings: { ...client.settings, cast: describeCast({ openai: client, anthropic }) } };
   }
   createApp(options).listen(port, "127.0.0.1", () => {
     console.log(`AI Shark Tank studio running at http://127.0.0.1:${port}`);

@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.mjs";
 
 // Every episode is deterministic, so these assertions are exact: the same pitch
 // and seed always produce the same lines, offers, and verdict.
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function enterTheTank(page) {
-  await page.getByRole("button", { name: "Enter the tank" }).click();
+  await page.getByRole("button", { name: "Test", exact: true }).click();
   await expect(page.locator("body")).toHaveAttribute("data-view", "show");
 }
 
@@ -33,13 +33,14 @@ test.describe("title screen", () => {
     await expect(page.getByRole("heading", { name: "AI Shark Tank" })).toBeVisible();
     await expect(page.locator(".stage canvas")).toBeVisible();
     await expect(page.locator(".stage")).toHaveAttribute("data-mood", "lobby");
-    await expect(page.getByRole("radio")).toHaveCount(6);
-    await expect(page.getByRole("radio", { name: /Barklight Labs/ })).toHaveAttribute("aria-checked", "true");
-    await expect(page.locator("#tonight-title")).toHaveText("Barklight Labs · seeking $500K for 8%");
-
-    await page.getByRole("radio", { name: /TideTrack/ }).click();
-    await expect(page.locator("#tonight-title")).toHaveText("TideTrack · seeking $1M for 10%");
-    await expect(page.locator(".stage")).toHaveAttribute("data-pitch", "tidetrack");
+    await expect(page.locator('#lobby button')).toHaveCount(2);
+    await expect(page.getByRole('button', {name:'Test', exact:true})).toBeEnabled();
+    await expect(page.getByRole('button', {name:'API', exact:true})).toBeDisabled();
+    await expect(page.locator('#lobby input, #lobby textarea, #lobby select')).toHaveCount(0);
+    await expect(page.locator('.cast-row')).toHaveCount(6);
+    await expect(page.locator('[data-actor="rex"]')).toContainText('Kevin O’Leary');
+    await expect(page.locator('[data-actor="rex"]')).toContainText('GPT-6.1 Sol');
+    await expect(page.locator('[data-actor="luna"]')).toContainText('Claude Sonnet 5.5');
 
     // No dashboard chrome: the show itself has no panels.
     await expect(page.locator(".player")).toBeHidden();
@@ -57,18 +58,17 @@ test.describe("title screen", () => {
     await expect(page.locator(".stage")).toHaveAttribute("data-wes-model", "mark", { timeout: 120_000 });
   });
 
-  test("validates the seed before rolling", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("#seed-input").fill("0");
-    await page.getByRole("button", { name: "Enter the tank" }).click();
-
-    await expect(page.locator("#lobby-error")).toHaveText(/Seed must be a whole number/);
-    await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
+  test("API URLs cannot start paid generation automatically", async ({ page }) => {
+    const posts=[];page.on('request',r=>{if(r.method()==='POST')posts.push(r.url());});
+    await page.goto('/?mode=api&pitch=barklight&autoplay=1');
+    await expect(page.locator('body')).toHaveClass(/is-ready/);
+    await expect(page.locator('body')).toHaveAttribute('data-view','lobby');
+    expect(posts).toEqual([]);
   });
 });
 
 test.describe("full episode", () => {
-  test("Barklight seed 1 plays from the entrance to a handshake with Wild Wes", async ({ page }, testInfo) => {
+  test("Barklight seed 1 plays from the entrance to a handshake with Mark Cuban", async ({ page }, testInfo) => {
     await page.goto(`/?${FAST}`);
     await enterTheTank(page);
 
@@ -80,7 +80,7 @@ test.describe("full episode", () => {
     await page.screenshot({ path: testInfo.outputPath("barklight-verdict.png") });
 
     await expect(dialog.locator(".slate-stamp")).toHaveText("Deal");
-    await expect(dialog.locator("h2")).toHaveText("Wild Wes invests in Barklight Labs");
+    await expect(dialog.locator("h2")).toHaveText("Mark Cuban invests in Barklight Labs");
     await expect(dialog.locator(".slate-terms")).toHaveText("$500,000 for 9.5%");
     await expect(dialog.locator(".slate-note")).toHaveText("16% below the asking valuation of $6.25M.");
     await expect(dialog.locator(".slate-facts")).toContainText("Feasibility 44%");
@@ -88,10 +88,10 @@ test.describe("full episode", () => {
     await dialog.getByRole("button", { name: "Close verdict" }).click();
     await expect(page.locator(".stage")).toHaveAttribute("data-shot", "handshake");
     await expect(page.locator(".stage")).toHaveAttribute("data-founder", "handshake");
-    await expect(page.locator(".lower-third")).toContainText("Deal · Wild Wes");
+    await expect(page.locator(".lower-third")).toContainText("Deal · Mark Cuban");
     await expect(page.locator("#progress")).toHaveAttribute("aria-valuetext", "Line 25 of 25");
     await expect(page.locator("#transcript li")).toHaveCount(25);
-    await expect(page.locator("#transcript li").last()).toContainText("Barklight Labs leaves the tank with $500,000 for 9.5% from Wild Wes.");
+    await expect(page.locator("#transcript li").last()).toContainText("Barklight Labs leaves the tank with $500,000 for 9.5% from Mark Cuban.");
   });
 
   test("the end slate downloads a markdown feasibility report", async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe("full episode", () => {
     const dialog = await waitForVerdict(page);
 
     await expect(dialog.locator(".slate-stamp")).toHaveText("Multi-shark deal");
-    await expect(dialog.locator("h2")).toHaveText("Max and Rex invest in LedgerLoop");
+    await expect(dialog.locator("h2")).toHaveText("Daymond John and Kevin O’Leary invest in LedgerLoop");
 
     const [download] = await Promise.all([page.waitForEvent("download"), dialog.getByRole("button", { name: "Download report" }).click()]);
     const content = await readFile(await download.path(), "utf8");
@@ -122,23 +122,16 @@ test.describe("full episode", () => {
     await expect(page.locator(".stage")).toHaveAttribute("data-founder", /exit|offstage/);
   });
 
-  test("a custom idea becomes a shareable episode", async ({ page }) => {
+  test("Test starts with one click and returns to the two choices", async ({ page }) => {
     await page.goto(`/?${FAST}`);
-    await page.getByText("Pitch your own idea").click();
-    await page.getByLabel("Your startup idea").fill("a marketplace for renting wedding dresses");
-
-    await expect(page.locator('.lineup-card[aria-checked="true"]')).toHaveCount(0);
-    await expect(page.locator("#tonight-title")).toHaveText("Your pitch");
-
-    await page.getByLabel("Your startup idea").press("Enter");
-    await expect(page).toHaveURL(/idea=a\+marketplace\+for\+renting\+wedding\+dresses&seed=1/);
-
-    const dialog = await waitForVerdict(page);
-    await expect(dialog.locator("h2")).toHaveText("WeddingDress Works leaves without a deal");
-
-    await dialog.getByRole("button", { name: "Next pitch" }).click();
-    await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
-    await expect(page).toHaveURL(/\/$/);
+    const generated=page.waitForRequest(r=>r.url().endsWith('/api/episodes'));
+    await enterTheTank(page);
+    expect((await generated).postDataJSON()).toEqual({mode:'test'});
+    await expect(page).toHaveURL(/mode=test&pitch=barklight&seed=1/);
+    const dialog=await waitForVerdict(page);
+    await dialog.getByRole('button',{name:'Next pitch'}).click();
+    await expect(page.locator('body')).toHaveAttribute('data-view','lobby');
+    await expect(page.locator('#lobby button')).toHaveCount(2);
   });
 });
 
@@ -166,7 +159,7 @@ test.describe("playback", () => {
 
     await page.getByRole("button", { name: "Skip to verdict" }).click();
     const dialog = await waitForVerdict(page);
-    await expect(dialog.locator("h2")).toHaveText("Vera invests in Odd Sox Club");
+    await expect(dialog.locator("h2")).toHaveText("Barbara Corcoran invests in Odd Sox Club");
 
     await dialog.getByRole("button", { name: "Watch again" }).click();
     await expect(dialog).toBeHidden();
@@ -206,7 +199,7 @@ test.describe("playback", () => {
     const dialog = await waitForVerdict(page);
     const spoken = await page.evaluate(() => window.__spoken);
     expect(spoken).toHaveLength(23);
-    expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Luna. That values the company at $6.25 million, 38% under the ask.");
+    expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Lori Greiner. That values the company at $6.25 million, 38% under the ask.");
 
     await dialog.getByRole("button", { name: "Close verdict" }).click();
     await page.getByRole("button", { name: "Turn voices off" }).press("Enter");
@@ -221,7 +214,8 @@ test.describe("playback", () => {
     await page.getByRole("button", { name: "Lobby" }).click();
 
     await expect(page.locator("body")).toHaveAttribute("data-view", "lobby");
-    await expect(page.getByRole("radio", { name: /TideTrack/ })).toHaveAttribute("aria-checked", "true");
+    await expect(page.locator("#lobby button")).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "Test", exact: true })).toBeEnabled();
   });
 });
 
@@ -235,9 +229,9 @@ test.describe("phone", () => {
     expect(overflow).toBeLessThanOrEqual(0);
     await page.screenshot({ path: testInfo.outputPath("phone-title.png") });
 
-    await page.getByRole("button", { name: "Enter the tank" }).tap();
+    await page.getByRole("button", { name: "Test", exact: true }).tap();
     const dialog = await waitForVerdict(page);
-    await expect(dialog.locator("h2")).toHaveText("Wild Wes and Vera invest in Dumpling Dynasty");
+    await expect(dialog.locator("h2")).toHaveText("Mark Cuban and Barbara Corcoran invest in Dumpling Dynasty");
 
     const showOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(showOverflow).toBeLessThanOrEqual(0);

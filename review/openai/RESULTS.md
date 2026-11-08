@@ -1,3 +1,5 @@
+> Historical results from before the scripted-only testing policy. No live checks were rerun for the multi-provider cast change.
+
 # OpenAI integration verification — 2026-11-07
 
 - Secure setup saved `OPENAI_API_KEY` to ignored `.env.local` with owner-only permissions. No key values are included in source, fixtures, captures or reports. The selected key has a 30-day lifetime.
@@ -10,6 +12,6 @@
 - A real browser-to-live-server check also passed: fresh GPT-generated deck, two successful speech responses, decoded audio playback, pause and mute, with no browser errors. See `live-browser-check.json`.
 - Syntax and whitespace checks passed.
 
-`live-check.mjs` and `live-browser-check.mjs` are opt-in paid checks. `capture.mjs` uses the saved live result and clips without calling OpenAI again.
+`live-check.mjs` and `live-browser-check.mjs` are now disabled. `capture.mjs` uses the saved live result and clips without calling OpenAI again.
 
 The live server on loopback port 5056 uses OpenAI for ideas, custom business details, HTML decks and TTS. Investor questioning, offers, negotiation and feasibility scoring remain simulated. Speech is generated on demand and cached in memory; restarting the server or a two-hour session expiry requires generating a new episode. Character animation follows speech activity but does not provide phoneme-level lip synchronization.

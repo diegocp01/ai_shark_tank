@@ -1,3 +1,5 @@
+import { assertScriptedServer } from '../offline.js';
+await assertScriptedServer();
 import { chromium, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 const browser = await chromium.launch({ channel:'chrome', args:['--use-angle=metal'] });
@@ -8,7 +10,7 @@ page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith('http://1
 try {
  await page.addInitScript(()=>localStorage.setItem('ai-shark-tank:voice','false'));
  await page.goto('http://127.0.0.1:5056/?quality=high&pitch=barklight');
- await page.getByRole('button',{name:'Enter the tank'}).click();
+ await page.getByRole('button',{name:'Test',exact:true}).click();
  await expect(page.locator('body')).toHaveAttribute('data-view','show');
  await page.keyboard.press('Space');
  await page.keyboard.press('ArrowRight');

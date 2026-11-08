@@ -66,7 +66,7 @@ export function resolvePitch({ pitchId, idea, seed = DEFAULT_SEED } = {}) {
 }
 
 function callName(profile) {
-  return profile.displayName.split(" ").pop();
+  return profile.displayName.split(" ")[0];
 }
 
 function lowerFirst(text) {
@@ -371,7 +371,7 @@ function buildKicker(profile, pitch, rng) {
   if (profile.id === "max" && rng.chance(0.65)) {
     if (pitch.metrics.recurring) {
       return {
-        label: "plus a 3% revenue royalty until Max recoups",
+        label: "plus a 3% revenue royalty until Daymond John recoups",
         short: "3% royalty",
         spoken: ", plus a three percent revenue royalty until I'm paid back",
       };
@@ -379,7 +379,7 @@ function buildKicker(profile, pitch, rng) {
 
     const royalty = Math.max(1, Math.round(pitch.metrics.priceUsd * 0.06));
     return {
-      label: `plus a $${royalty} per-unit royalty until Max recoups`,
+      label: `plus a $${royalty} per-unit royalty until Daymond John recoups`,
       short: `$${royalty}/unit royalty`,
       spoken: `, plus a royalty of $${royalty} a unit until I get my money back`,
     };

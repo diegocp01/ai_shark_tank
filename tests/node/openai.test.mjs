@@ -1,3 +1,4 @@
+import { scriptedClients } from '../fixtures/liveCast.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createOpenAIClient, AIError } from '../../src/lib/openai/client.js';
@@ -24,9 +25,10 @@ test('API errors, refusals and malformed results cannot silently fall back or le
 });
 test('live authored custom pitch feeds the existing episode and HTML provider contract',async()=>{
  const pitch=resolvePitch({pitchId:'barklight'});const data=Object.fromEntries(Object.keys(PITCH_SCHEMA.properties).map(key=>[key,pitch[key]]));
- const client={settings:{},json:async({name,input})=>({metadata:{model:'gpt-6.1-sol',servedTier:'ultrafast'},data:name==='founder_pitch'?data:{title:'Live deck',slides:[{title:'Start',beatId:input.beats[0].id,html:'<h1>Generated HTML</h1><script>bad()</script>'}]}})};
- const providers=createLiveProviders(client);const episode=await providers.episodeProvider.createEpisode({idea:'A brighter dog collar',seed:1});
- assert.equal(episode.pitch.startupName,pitch.startupName);assert.equal(episode.provider,'openai-pitch');assert.match(episode.beats[2].text,/dog/);assert.equal(episode.generation.servedTier,'ultrafast');
+ const clients=scriptedClients();
+ const client={settings:{},json:async request=>{const {name,input}=request;if(!['founder_pitch','studio_html_deck'].includes(name))return clients.openai.json(request);return ({metadata:{model:'gpt-6.1-sol',servedTier:'ultrafast'},data:name==='founder_pitch'?data:{title:'Live deck',slides:[{title:'Start',beatId:input.beats[0].id,html:'<h1>Generated HTML</h1><script>bad()</script>'}]}});}};
+ const providers=createLiveProviders(client,clients.anthropic);const episode=await providers.episodeProvider.createEpisode({idea:'A brighter dog collar',seed:1});
+ assert.equal(episode.pitch.startupName,pitch.startupName);assert.equal(episode.provider,'multi-model');assert.match(episode.beats[2].text,/dog/);assert.equal(episode.generation.pitch.servedTier,'ultrafast');
  const deck=await createPitchDeck(episode,providers.deckProvider);assert.equal(deck.provider.id,'openai-html');assert.equal(deck.slides[0].html,'<h1>Generated HTML</h1>');assert.equal(deck.generation.servedTier,'ultrafast');
 });
 test('seven distinct server-owned voices, bounded sessions and deduplicated audio',async()=>{

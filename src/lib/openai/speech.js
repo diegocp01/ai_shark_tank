@@ -34,7 +34,7 @@ export function createSpeechService(client, { now = Date.now } = {}) {
       if (cache.has(key)) { const value = cache.get(key); cache.delete(key); cache.set(key, value); return value; }
       if (pending.has(key)) return pending.get(key);
       if (pending.size >= 3) throw new AIError("The voice studio is busy. Please try again.", 429);
-      const job = client.speech({ text: beat.text, voice: style.voice, instructions: `${style.direction} Speak naturally, with restrained emotion. This is an original fictional character, not an imitation of a real person.` }).then(buffer => {
+      const job = client.speech({ text: beat.text, voice: style.voice, instructions: `${style.direction} Speak naturally, with restrained emotion. This is an AI dramatization using an original synthetic voice. Do not imitate the voice of any real person.` }).then(buffer => {
         cache.set(key, buffer); cacheBytes += buffer.length;
         while (cache.size > 128 || cacheBytes > 32 * 1024 * 1024) { const first = cache.keys().next().value; cacheBytes -= cache.get(first).length; cache.delete(first); }
         return buffer;

@@ -1,3 +1,5 @@
+import { assertScriptedServer } from '../offline.js';
+await assertScriptedServer();
 import { chromium, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal'] });
@@ -11,7 +13,7 @@ await page.addInitScript(() => localStorage.setItem('ai-shark-tank:voice', 'fals
 await page.goto('http://127.0.0.1:5056/?quality=high&pitch=odd-sox');
 await page.waitForFunction(() => document.querySelector('#stage').dataset.wesModel === 'mark', null, { timeout: 120000 });
 await page.screenshot({ path: 'review/realistic-studio/lobby.png' });
-await page.getByRole('button', { name: 'Enter the tank' }).click();
+await page.getByRole('button', { name: 'Test', exact: true }).click();
 await page.keyboard.press('Space');
 await page.keyboard.press('ArrowRight');
 await page.keyboard.press('ArrowRight');

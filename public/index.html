@@ -29,34 +29,23 @@
         <div class="title-card">
           <p class="eyebrow">Inside the studio</p>
           <h1 id="show-title"><b>AI</b> Shark Tank</h1>
-          <p class="title-tagline">One pitch. Five investors. A seat at the table.</p>
+          <p class="title-tagline">The models pitch. The sharks decide. You watch.</p>
 
-          <div class="lineup" id="pitch-list" role="radiogroup" aria-label="Choose tonight's founder"></div>
-
-          <div class="tonight" id="tonight">
-            <strong id="tonight-title"></strong>
-            <span id="tonight-detail"></span>
+          <div class="start-modes" aria-label="Start a show">
+            <button class="mode-button mode-api" type="button" id="api-button" aria-label="API" aria-describedby="api-description" disabled>
+              <strong>API</strong><span id="api-description">A new idea. A live AI cast.</span>
+            </button>
+            <button class="mode-button mode-test" type="button" id="test-button" aria-label="Test" aria-describedby="test-description" disabled>
+              <strong>Test</strong><span id="test-description">Scripted show. No API calls.</span>
+            </button>
           </div>
-
-          <details class="own-idea" id="own-idea">
-            <summary>Pitch your own idea</summary>
-            <div class="idea-field">
-              <label class="sr-only" for="idea-input">Your startup idea</label>
-              <textarea id="idea-input" rows="2" maxlength="140" placeholder="A subscription box of snacks for houseplants" autocomplete="off"></textarea>
-              <span class="char-count" id="char-count">0/140</span>
-            </div>
-            <button type="button" id="invent-button" hidden>Invent an idea</button>
-          </details>
-
-          <div class="title-actions">
-            <button class="enter" type="button" id="roll-button">Enter the tank</button>
-            <label class="seed" for="seed-input" title="Same pitch and seed always replay the same episode.">
-              <span>Seed</span>
-              <input id="seed-input" type="number" inputmode="numeric" min="1" max="999999" step="1" value="1" />
-              <button type="button" id="seed-dice" aria-label="Pick a random seed"></button>
-            </label>
-          </div>
-          <p class="production-note" id="production-note"></p>
+          <p class="start-status" id="start-status" role="status" aria-live="polite">Preparing the studio…</p>
+          <section class="cast-roster" aria-labelledby="cast-heading">
+            <h2 id="cast-heading">The API cast</h2>
+            <dl id="cast-models"></dl>
+            <p class="cast-note">They invent the idea, build the deck, and make the deal.</p>
+          </section>
+          <p class="production-note" id="production-note">AI portrayals and synthetic voices. No real statements or endorsements.</p>
           <p class="form-error" id="lobby-error" role="alert" hidden></p>
         </div>
       </section>

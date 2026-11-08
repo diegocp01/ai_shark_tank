@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
-test('Barbara shipped GLB loads, expressions and review views work on desktop and mobile', async ({ page }) => {
+test('Barbara shipped GLB loads, expressions and review views work on desktop and mobile', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const response = page.waitForResponse('**/models/barbara/barbara-rigged.glb');
@@ -15,7 +15,7 @@ test('Barbara shipped GLB loads, expressions and review views work on desktop an
   }
   await page.getByRole('button', { name: 'Reset view' }).click();
   await expect(page.locator('#viewport')).toHaveAttribute('data-expression', 'neutral');
-  await page.screenshot({ path: 'docs/barbara/browser-portrait.png' });
+  await page.screenshot({ path: testInfo.outputPath('browser-portrait.png') });
   await page.getByRole('button', { name: 'Full figure', exact: true }).click();
   await expect(page.locator('#viewport')).toHaveAttribute('data-frame', 'full');
   await page.getByRole('button', { name: 'Profile', exact: true }).click();
@@ -26,7 +26,7 @@ test('Barbara shipped GLB loads, expressions and review views work on desktop an
   await page.getByRole('button', { name: 'Reset view' }).click();
   await expect(page.getByRole('button', { name: 'Mouth open' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: 'docs/barbara/browser-mobile.png' });
+  await page.screenshot({ path: testInfo.outputPath('browser-mobile.png') });
   expect(errors).toEqual([]);
 });
 

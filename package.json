@@ -11,8 +11,8 @@
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check public/js/app.js",
     "test": "npm run test:node && npm run test:e2e",
-    "test:node": "node --test tests/node/*.test.mjs",
-    "test:e2e": "playwright test"
+    "test:node": "node --import ./tests/offline.mjs --test tests/node/*.test.mjs",
+    "test:e2e": "NODE_OPTIONS=\"--import ./tests/offline.mjs\" playwright test"
   },
   "dependencies": {
     "ajv": "^8.20.0",
