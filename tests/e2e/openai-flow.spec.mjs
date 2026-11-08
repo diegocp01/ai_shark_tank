@@ -13,15 +13,14 @@ test('OpenAI idea flow, disclosure and server audio play without exposing creden
   const Original=window.AudioContext;window.__audioStarts=0;
   window.AudioContext=class extends Original{createBufferSource(){const source=super.createBufferSource();const start=source.start.bind(source);source.start=(...args)=>{window.__audioStarts++;return start(...args);};return source;}};
  });
- await page.route('**/api/config',async route=>{const response=await route.fetch();const config=await response.json();await route.fulfill({json:{...config,generation:{model:'gpt-6.1-sol',reasoning:'medium',serviceTier:'ultrafast'},speech:{provider:'openai'}}});});
- await page.route('**/api/ideas',route=>route.fulfill({json:{idea:'A portable tool library for apartment renters'}}));
- await page.route('**/api/episodes',async route=>{const response=await route.fetch();const payload=await response.json();await route.fulfill({json:{...payload,speech:{token:'local-test-session'}}});});
+ await page.route('**/api/config',async route=>{const response=await route.fetch();const config=await response.json();await route.fulfill({json:{...config,modes:{api:{available:true,reason:null},test:{available:true}},generation:{model:'gpt-6.1-sol',reasoning:'medium',serviceTier:'ultrafast'},speech:{provider:'openai'}}});});
+ await page.route('**/api/episodes',async route=>{expect(route.request().postDataJSON()).toEqual({mode:'api'});const response=await route.fetch({postData:JSON.stringify({mode:'test'})});const payload=await response.json();await route.fulfill({json:{...payload,speech:{token:'local-test-session'}}});});
  await page.route('**/api/speech',route=>{requests.push(route.request().postDataJSON());return route.fulfill({contentType:'audio/wav',body:wav()});});
  await page.goto('/?quality=low');
- await expect(page.locator('#production-note')).toContainText('OpenAI + Anthropic');
- await page.getByText('Pitch your own idea').click();await page.getByRole('button',{name:'Invent an idea'}).click();
- await expect(page.getByLabel('Your startup idea')).toHaveValue('A portable tool library for apartment renters');
- await page.getByRole('button',{name:'Enter the tank'}).click();
+ await expect(page.locator('#cast-models')).toContainText('GPT-6.1 Sol');
+ await expect(page.locator('#cast-models')).toContainText('Claude Sonnet 5.5');
+ await expect(page.locator('#lobby input, #lobby textarea')).toHaveCount(0);
+ await page.getByRole('button',{name:'API',exact:true}).click();
  await expect(page.locator('body')).toHaveAttribute('data-view','show');
  await expect.poll(()=>page.evaluate(()=>window.__audioStarts)).toBeGreaterThan(0);
  await page.getByRole('button',{name:'Pause',exact:true}).press('Enter');
@@ -33,4 +32,22 @@ test('OpenAI idea flow, disclosure and server audio play without exposing creden
  expect(requests.length).toBeGreaterThan(0);
  expect(requests.every(r=>Object.keys(r).sort().join(',')==='beatId,token')).toBe(true);
  expect(errors).toEqual([]);
+});
+
+test('Test uses device audio and scripted generation even when API is available',async({page})=>{
+ const posts=[];
+ await page.route('**/api/config',async route=>{
+  const config=await(await route.fetch()).json();
+  await route.fulfill({json:{...config,modes:{api:{available:true},test:{available:true}},speech:{provider:'openai'},generation:{model:'gpt-6.1-sol'}}});
+ });
+ page.on('request',r=>{if(r.method()==='POST')posts.push({url:r.url(),body:r.postDataJSON()});});
+ await page.goto('/?quality=low');
+ await expect(page.getByRole('button',{name:'API',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Test',exact:true}).click();
+ await expect(page.locator('body')).toHaveAttribute('data-view','show');
+ await page.getByRole('button',{name:'Skip to verdict'}).press('Enter');
+ await expect(page.locator('dialog.end-card')).toBeVisible();
+ expect(posts).toHaveLength(1);
+ expect(posts[0].url).toMatch(/\/api\/episodes$/);
+ expect(posts[0].body).toEqual({mode:'test'});
 });

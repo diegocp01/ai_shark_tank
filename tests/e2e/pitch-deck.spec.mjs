@@ -8,7 +8,7 @@ test("HTML deck is generated, rendered in the set, synced, downloadable and rese
   await page.addInitScript(() => localStorage.setItem("ai-shark-tank:voice", "false"));
   await page.goto("/?quality=low&pitch=barklight");
   const response = page.waitForResponse(r => r.url().endsWith("/api/episodes") && r.request().method() === "POST");
-  await page.getByRole("button", { name: "Enter the tank" }).click();
+  await page.getByRole("button", { name: "Test", exact: true }).click();
   const { deck } = await (await response).json();
   await expect(page.locator("body")).toHaveAttribute("data-view", "show");
   await page.keyboard.press("Space");
@@ -50,10 +50,9 @@ test("HTML deck is generated, rendered in the set, synced, downloadable and rese
   await page.getByRole("button", { name: "Skip to verdict" }).press("Enter");
   await page.getByRole("button", { name: "Next pitch", exact: true }).click();
   await expect(page.locator("#stage")).toHaveAttribute("data-deck-slides", "0");
-  await page.getByRole("radio", { name: /TideTrack/ }).click();
-  await page.getByRole("button", { name: "Enter the tank" }).click();
+  await page.getByRole("button", { name: "Test", exact: true }).click();
   await expect(page.locator("#stage")).toHaveAttribute("data-deck-slides", "4");
-  await expect(page.locator("#stage")).toHaveAttribute("data-pitch", "tidetrack");
+  await expect(page.locator("#stage")).toHaveAttribute("data-pitch", "barklight");
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
 });

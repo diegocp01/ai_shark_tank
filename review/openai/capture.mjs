@@ -10,7 +10,7 @@ try{
  await page.addInitScript(()=>localStorage.setItem('ai-shark-tank:voice','false'));
  await page.route('**/api/episodes',r=>r.fulfill({json:payload}));
  await page.goto('http://127.0.0.1:5056/?quality=high');
- await page.getByRole('button',{name:'Enter the tank'}).click();await expect(page.locator('body')).toHaveAttribute('data-view','show');
+ await page.getByRole('button',{name:'Test',exact:true}).click();await expect(page.locator('body')).toHaveAttribute('data-view','show');
  await page.keyboard.press('Space');await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');
  await expect(page.locator('#stage')).toHaveAttribute('data-deck-slide','2');
  await page.locator('body').click({position:{x:1400,y:10}});await expect(page.locator('#transport')).toHaveCSS('opacity','0',{timeout:6000});

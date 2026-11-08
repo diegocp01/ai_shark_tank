@@ -44,21 +44,15 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
 ## How it works
 
 <p align="center">
-  <img src="static/lobby.jpg" alt="The title screen: pick tonight's founder over a live shot of the shark panel" width="440" />
+  <img src="review/start-screen/desktop.png" alt="The start screen: API or Test, with each actor’s model shown" width="440" />
   <img src="static/pitch.jpg" alt="The handshake: Daymond John stands to shake on a deal with the founder of LedgerLoop" width="440" />
 </p>
 
-1. **Pick a founder.** Six hand-written pitches (pet hardware, food-truck SaaS, frozen dumplings, a sassy plant sensor, ocean-plastic buoys, a mismatched-sock club), or type your own idea. In live mode, **Invent an idea** creates a new concept and the model builds the business around it.
-2. **Pick a seed.** In mock mode, same pitch + seed = same episode. Live generations vary; replay within a loaded show reuses its deck and script. A different seed is an alternate take: different questions, a different shark mood, sometimes a different deal.
-3. **Enter the tank.** The show runs through six phases:
-   - **Cold open** and the founder's entrance
-   - **Pitch**: the ask, the problem, the product, the proof
-   - **Q&A**: each shark asks one question, aimed at the weakest metric they care about
-   - **Offers**: each shark scores the pitch on eight business factors (traction, margin, customer economics, defensibility, novelty, market size, brand, execution risk) through their own persona weights. Above their threshold they make an offer, and the less excited they are, the more equity they want. The least interested go out first.
-   - **Negotiation**: with several offers the founder either starts a bidding war or asks two sharks to team up. Then the founder counters, and the shark accepts, meets in the middle, or holds firm. The founder walks if the terms pass their walk-away point.
-   - **Verdict**: deal or no deal, plus a feasibility report
-4. **Watch it like TV.** The camera cuts between the show's setups: an establishing wide of the set, the founder's entrance down the blue hallway, close-ups on whoever is talking, over-the-shoulder reverse shots from behind the sharks, and a medium shot as each shark decides. Sharks lean in when they make an offer and sit back with their arms crossed when they go out. On a deal, the shark stands up and shakes the founder's hand; on a no-deal, the founder walks back out. Captions and offer graphics are optional and off by default; toggle CC or Info in the player. There are no persistent badges, timecodes, deal stamps, or confetti.
-5. **Take it with you.** The final studio shot stays on screen. Open Show verdict from the player to see the result and feasibility headline. From there you can watch again, download the full feasibility report as Markdown (with the transcript), or copy a share link or social caption.
+1. **Choose API or Test.** These are the only start-screen actions. There is no idea field, preset selector, seed input or separate start step. The six-person roster shows each actor’s API provider and model.
+2. **API invents the show.** One click asks GPT to invent a fresh idea, develop its business and HTML pitch deck, then run the founder and five GPT/Claude judges through questions, offers and negotiation. API mode requires both server-side keys and uses generated OpenAI speech. Production can take several minutes; both start buttons stay disabled while it runs.
+3. **Test stays offline.** One click plays the scripted Barklight demo with deterministic HTML slides and local device voices. This bypasses all model, generated-deck and TTS services even on a server with both keys configured. Existing scripted share links can replay other fixtures.
+4. **Watch like TV.** The camera follows the pitch, questions, offers, negotiation and verdict. Captions and offer graphics are optional and off by default. Controls fade away; the cast roster appears only on the start screen.
+5. **Replay or download.** Show verdict opens the final terms and feasibility report, with replay, Markdown report and HTML deck downloads. Watch again reuses the loaded show. Next pitch returns to API / Test; choosing API again invents a new idea. API links reopen the start screen and never automatically spend credits.
 
 <p align="center">
   <img src="static/verdict.jpg" alt="The end slate: final terms and the feasibility headline over the shark panel" width="600" />
@@ -74,23 +68,25 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
 | `R` | Restart the episode |
 | `C` | Toggle captions |
 
-The player appears on pointer movement, tap, or keyboard interaction and hides after 2.6 seconds, including while paused and on phones. Keyboard focus keeps the controls accessible. CC (or C) toggles captions; Info toggles offer graphics. Both preferences are remembered. Speeds go from 1× to 3×. live mode plays generated speech through Web Audio, prefetches the current and next lines, and supports pause/resume, skip and replay. Mock mode uses installed device voices only. A failed live voice request disables speech with an error message; CC remains available.
+The player appears on pointer movement, tap, or keyboard interaction and hides after 2.6 seconds, including while paused and on phones. Keyboard focus keeps the controls accessible. CC (or C) toggles captions; Info toggles offer graphics. Both preferences are remembered. Speeds go from 1× to 3×. API mode plays generated speech through Web Audio, prefetches the current and next lines, and supports pause/resume, skip and replay. Mock mode uses installed device voices only. A failed live voice request disables speech with an error message; CC remains available.
 
 The 3D studio renders with WebGL 2: burgundy leather chairs with walnut frames and brass nailheads, a woven patterned rug, recessed timber panels, stone bays, glass pendants, physical product props, broad softbox lighting, soft shadows, subtle bloom, and MSAA. High quality adds a restrained planar floor reflection; stationary set meshes are batched by material. All textures are generated locally and fonts use the system stack. Rendering uses no CDN assets or remote fonts. OpenAI/Anthropic generation and OpenAI speech requests go through the local Express server; the browser never receives an API key. The character models remain stylized studies rather than photoreal scans. Without GPU acceleration it switches itself to a light mode (lower resolution, no shadows); `?quality=low` or `?quality=high` forces either. Without WebGL at all, the show still plays with captions and graphics.
 
 ### Share links
 
 ```
-/?pitch=ledgerloop&seed=7               preselect a pitch and seed
-/?idea=a+robot+that+folds+laundry       preselect a custom idea
-&autoplay=1                             start immediately
-&speed=2                                any playback speed from 0.25 to 40
-&quality=low                            force the light renderer
+/?mode=test&pitch=ledgerloop&seed=7     replay a scripted fixture with Test
+/?mode=api                             open the start screen (never auto-starts API)
+&autoplay=1                            autoplay scripted fixture links only
+&speed=2                               playback speed from 0.25 to 40
+&quality=low                           light renderer
 ```
+
+The normal UI sends only `{ "mode": "api" }` or `{ "mode": "test" }`. API ideas are generated on the server and never taken from URL parameters.
 
 ## Episode format
 
-`POST /api/episodes` with `{ "pitchId": "barklight", "seed": 1 }` (or `{ "idea": "...", "seed": 1 }`) returns `{ episode, deck, speech, download, allTime }`. The episode is a self-contained script:
+`POST /api/episodes` with `{ "mode": "api" }` or `{ "mode": "test" }` returns `{ episode, deck, speech, download, allTime }`. Older programmatic pitch/idea requests remain compatible. The episode is a self-contained script:
 
 | Field | What it holds |
 | --- | --- |

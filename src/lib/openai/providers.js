@@ -20,6 +20,7 @@ export const DECK_SCHEMA = object({ title: string(160), slides: { type: "array",
 export function createLiveProviders(client, anthropic) {
   const episodeProvider = {
     id: "multi-model", label: "OpenAI + Anthropic cast", live: true,
+    assertConfigured() { assertLiveConfigured({ openai: client, anthropic }); },
     async createEpisode(request) {
       const clients = { openai: client, anthropic };
       assertLiveConfigured(clients);

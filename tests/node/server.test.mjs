@@ -164,3 +164,41 @@ it("accepts a replacement deck provider without changing the episode engine", as
   assert.equal(body.deck.provider.id, "test-adapter");
   assert.equal(body.deck.slides[0].html, "<h1>Hello sharks</h1>");
 });
+
+it('Test bypasses every paid provider even when the server is configured live', async () => {
+  let calls = 0;
+  const forbidden = () => { calls++; throw new Error('Test must never call a model or TTS provider'); };
+  const live = createApp({
+    episodeProvider: { id: 'multi-model', live: true, createEpisode: forbidden },
+    deckProvider: { id: 'live-html', live: true, generateDeck: forbidden },
+    generateIdea: forbidden, speechService: { register: forbidden, describe: () => ({provider:'openai'}) },
+    aiSettings: { model:'gpt-6.1-sol' },
+  });
+  const {body} = await request(live).post('/api/episodes').send({mode:'test'}).expect(200);
+  assert.equal(body.episode.provider,'scripted');
+  assert.equal(body.deck.provider.id,'mock-html');
+  assert.equal(body.speech,null);
+  assert.equal(calls,0);
+});
+
+it('API invents the idea server-side before producing the show, without user input', async () => {
+  const calls=[];
+  const {createEpisode}=await import('../../src/lib/scriptedEngine.js');
+  const live=createApp({
+    episodeProvider:{id:'multi-model',live:true,assertConfigured(){calls.push('ready');},async createEpisode(input){calls.push(input);return createEpisode(input);}},
+    async generateIdea(theme){assert.equal(theme,undefined);calls.push('idea');return {idea:'A shared tool library for apartment renters'};},
+  });
+  const {body}=await request(live).post('/api/episodes').send({mode:'api',idea:'Ignored manual input',pitchId:'sproutsy'}).expect(200);
+  assert.deepEqual(calls,['ready','idea',{pitchId:'',idea:'A shared tool library for apartment renters',seed:1}]);
+  assert.equal(body.episode.pitch.idea,'A shared tool library for apartment renters');
+});
+
+it('API is unavailable without configured providers and never silently falls back to Test', async () => {
+  await request(app).post('/api/episodes').send({mode:'api'}).expect(503);
+  await request(app).post('/api/episodes').send({mode:'other'}).expect(400);
+  const {body}=await request(app).get('/api/config').expect(200);
+  assert.equal(body.modes.api.available,false);
+  assert.equal(body.modes.test.available,true);
+  assert.equal(Object.keys(body.cast).length,6);
+  assert.equal(body.cast.luna.model,'claude-sonnet-5-5');
+});

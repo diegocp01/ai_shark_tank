@@ -12,7 +12,7 @@ for (const choice of ['counter','decline']) test(`mixed-provider contract plays 
   await route.fulfill({json:{...payload,episode,deck,speech:null}});
  });
  await page.goto('/?quality=low');
- await page.getByRole('button',{name:'Enter the tank'}).click();
+ await page.getByRole('button',{name:'Test',exact:true}).click();
  await expect(page.locator('body')).toHaveAttribute('data-view','show');
  await page.getByRole('button',{name:'Skip to verdict'}).press('Enter');
  const dialog=page.locator('dialog.end-card');await expect(dialog).toBeVisible();

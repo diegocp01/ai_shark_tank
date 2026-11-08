@@ -19,8 +19,9 @@ export const TURN_SCHEMAS = {
   choice: object({ action: enumeration(["accept", "counter", "decline"]), sharkId: { anyOf: [enumeration(SHARK_PROFILES.map(p => p.id)), { type: "null" }] }, reason: text, offer: nullableOffer }),
   response: object({ action: enumeration(["accept", "revise", "out"]), reason: text, offer: nullableOffer }),
 };
-export function describeCast(clients) {
-  return Object.fromEntries(Object.entries(ACTOR_PROVIDERS).map(([id, provider]) => [id, { provider, ...clients[provider]?.settings }]));
+export function describeCast(clients = {}) {
+  const defaults = { openai: { model: "gpt-6.1-sol", reasoning: "medium", serviceTier: "ultrafast" }, anthropic: { model: "claude-sonnet-5-5", reasoning: "medium" } };
+  return Object.fromEntries(Object.entries(ACTOR_PROVIDERS).map(([id, provider]) => [id, { provider, ...(clients[provider]?.settings || defaults[provider]) }]));
 }
 export function assertLiveConfigured(clients) {
   for (const provider of new Set(Object.values(ACTOR_PROVIDERS))) {

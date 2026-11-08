@@ -9,23 +9,17 @@ import { createStudio } from "./studio/studio.js";
 import { createVoice } from "./voice.js";
 
 const SPEEDS = [1, 1.5, 2, 3];
-const CUSTOM_FOUNDER = { name: "You", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" };
+const CUSTOM_FOUNDER = { name: "Founder", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" };
 const $ = (selector) => document.querySelector(selector);
 
 const elements = {
   body: document.body,
   stage: $("#stage"),
   timecode: $("#timecode"),
-  pitchList: $("#pitch-list"),
-  tonightTitle: $("#tonight-title"),
-  tonightDetail: $("#tonight-detail"),
-  ownIdea: $("#own-idea"),
-  ideaInput: $("#idea-input"),
-  charCount: $("#char-count"),
-  seedInput: $("#seed-input"),
-  seedDice: $("#seed-dice"),
-  rollButton: $("#roll-button"),
-  inventButton: $("#invent-button"),
+  apiButton: $("#api-button"),
+  testButton: $("#test-button"),
+  castModels: $("#cast-models"),
+  startStatus: $("#start-status"),
   productionNote: $("#production-note"),
   lobbyError: $("#lobby-error"),
   lowerThird: $("#lower-third"),
@@ -47,7 +41,8 @@ const elements = {
 const state = {
   config: null,
   view: "lobby",
-  selection: { pitchId: null, idea: "", seed: 1 },
+  mode: "test",
+  replay: null,
   episode: null,
   download: null,
   deck: null,
@@ -157,7 +152,7 @@ function readUrl() {
 
   return {
     pitchId: params.get("pitch"),
-    idea: params.get("idea"),
+    mode: params.get("mode"),
     seed: Number.parseInt(params.get("seed") || "", 10),
     speed: Number.isFinite(speed) && speed >= 0.25 && speed <= 40 ? speed : null,
     autoplay: params.get("autoplay") === "1",
@@ -167,8 +162,8 @@ function readUrl() {
 function shareUrl() {
   const params = new URLSearchParams();
   const { pitch, seed } = state.episode;
-  params.set(pitch.custom ? "idea" : "pitch", pitch.custom ? pitch.idea : pitch.id);
-  params.set("seed", String(seed));
+  params.set("mode", state.mode);
+  if (state.mode === "test") { params.set("pitch", pitch.id); params.set("seed", String(seed)); }
   return `${window.location.origin}/?${params.toString()}`;
 }
 
@@ -196,82 +191,27 @@ async function copyText(text, message) {
 
 // --- Lobby -----------------------------------------------------------------------
 
-function selectedPitch() {
-  return state.config.pitches.find((pitch) => pitch.id === state.selection.pitchId) || null;
-}
-
-function renderTonight() {
-  const pitch = state.selection.idea ? null : selectedPitch();
-
-  if (pitch) {
-    elements.tonightTitle.textContent = `${pitch.startupName} · seeking ${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}`;
-    elements.tonightDetail.textContent = pitch.tagline;
-  } else {
-    const idea = state.selection.idea;
-    elements.tonightTitle.textContent = "Your pitch";
-    elements.tonightDetail.textContent = idea ? `${idea[0].toUpperCase()}${idea.slice(1)}` : "Describe a startup and the sharks take it from there.";
-  }
-}
-
 function previewSelection() {
-  const pitch = selectedPitch();
-
-  if (state.selection.idea || !pitch) {
-    studio.setPitch({
-      id: "custom",
-      productName: "Your idea",
-      tagline: state.selection.idea || "",
-      startupName: "Custom pitch",
-      icon: "sparkle",
-      askLabel: "Ask TBD",
-      founder: CUSTOM_FOUNDER,
-    });
-  } else {
-    studio.setPitch(stagePitch(pitch));
-  }
-
+  studio.setPitch({ id: "studio", productName: "The next big idea", tagline: "Invented in the tank", startupName: "AI Shark Tank", icon: "sparkle", askLabel: "", founder: CUSTOM_FOUNDER });
   studio.placeFounder("mark");
-  renderTonight();
 }
 
-function renderLineup() {
-  elements.pitchList.innerHTML = state.config.pitches
-    .map((pitch) => {
-      const selected = !state.selection.idea && pitch.id === state.selection.pitchId;
-      return `
-        <button class="lineup-card" type="button" role="radio" aria-checked="${selected}" tabindex="${selected ? 0 : -1}" data-pitch="${pitch.id}" style="--accent:${pitch.founder.accent}">
-          <span class="lineup-icon">${icon(pitch.icon)}</span>
-          <span><strong>${escapeHtml(pitch.startupName)}</strong><small>${formatMoneyShort(pitch.askUsd)} for ${formatPercent(pitch.equityPct)}</small></span>
-        </button>`;
-    })
-    .join("");
-
-  if (state.selection.idea) {
-    elements.pitchList.querySelector(".lineup-card")?.setAttribute("tabindex", "0");
-  }
+function renderCast() {
+  const actors = [{ id: "founder", displayName: "Founder / presenter" }, ...state.config.sharks];
+  elements.castModels.innerHTML = actors.map(actor => {
+    const model = state.config.cast[actor.id];
+    const label = model.model === "gpt-6.1-sol" ? "GPT-6.1 Sol" : model.model === "claude-sonnet-5-5" ? "Claude Sonnet 5.5" : model.model;
+    return `<div class="cast-row" data-actor="${actor.id}"><dt>${escapeHtml(actor.displayName)}</dt><dd><span class="model-provider ${model.provider}">${model.provider === "openai" ? "OpenAI" : "Anthropic"}</span>${escapeHtml(label)}</dd></div>`;
+  }).join("");
 }
 
-function selectPitch(pitchId, { focus = false } = {}) {
-  state.selection.pitchId = pitchId;
-  state.selection.idea = "";
-  elements.ideaInput.value = "";
-  updateCharCount();
-  renderLineup();
-  previewSelection();
-  hideLobbyError();
-
-  if (focus) {
-    elements.pitchList.querySelector(`[data-pitch="${pitchId}"]`)?.focus();
-  }
-}
-
-function updateCharCount() {
-  elements.charCount.textContent = `${elements.ideaInput.value.length}/${state.config?.limits.ideaMaxLength ?? 140}`;
-}
-
-function readSeed() {
-  const seed = Number.parseInt(elements.seedInput.value, 10);
-  return Number.isInteger(seed) && seed >= 1 && seed <= state.config.limits.maxSeed ? seed : null;
+function configureVoice(mode) {
+  voice?.cancel();
+  voice = mode === "api" ? createOpenAIVoice({
+    onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
+    onActivity(active, speakerId) { if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null); },
+  }) : createVoice({ sharks: state.config.sharks });
+  state.voiceOn = Boolean(voice.supported && recall("voice", true));
 }
 
 function showLobbyError(message) {
@@ -285,8 +225,11 @@ function hideLobbyError() {
 
 function setRollLoading(loading) {
   state.loading = loading;
-  elements.rollButton.disabled = loading;
-  elements.rollButton.innerHTML = loading ? `<span class="spinner" aria-hidden="true"></span>Rolling` : `${icon("play")}Enter the tank`;
+  elements.apiButton.disabled = loading || !state.config?.modes.api.available;
+  elements.testButton.disabled = loading || !state.config;
+  elements.apiButton.setAttribute("aria-busy", String(loading && state.mode === "api"));
+  elements.testButton.setAttribute("aria-busy", String(loading && state.mode === "test"));
+  elements.startStatus.textContent = loading ? (state.mode === "api" ? "Inventing an idea, building the deck, and preparing the cast. This can take a few minutes…" : "Preparing the scripted show…") : state.config?.modes.api.reason || "Choose how to watch.";
 }
 
 // --- Broadcast graphics -------------------------------------------------------------
@@ -621,23 +564,15 @@ function playEpisode() {
   revealControls();
 }
 
-async function rollCameras() {
+async function rollCameras(mode = "test") {
   if (state.loading) {
     return;
   }
 
+  state.mode = mode;
+  configureVoice(mode);
   void voice?.unlock?.().catch(() => {});
-  const seed = readSeed();
-
-  if (seed === null) {
-    showLobbyError(`Seed must be a whole number between 1 and ${state.config.limits.maxSeed}.`);
-    elements.seedInput.focus();
-    return;
-  }
-
-  const idea = elements.ideaInput.value.trim();
-  const body = idea ? { idea, seed } : { pitchId: state.selection.pitchId, seed };
-  state.selection.seed = seed;
+  const body = mode === "api" ? { mode: "api" } : { mode: "test", ...state.replay };
   hideLobbyError();
   setRollLoading(true);
 
@@ -683,6 +618,7 @@ function backToLobby() {
   state.deck = null;
   state.deckCanvases = [];
   state.episode = null;
+  state.replay = null;
   state.playedMs = 0;
   state.clockStartedAt = null;
   syncUrl();
@@ -757,18 +693,8 @@ function handleTransportAction(action) {
 }
 
 function bindEvents() {
-  elements.inventButton.addEventListener("click", async () => {
-    if (state.loading) return;
-    setRollLoading(true); elements.inventButton.disabled = true; elements.inventButton.textContent = "Inventing…"; hideLobbyError();
-    try {
-      const response = await fetch("/api/ideas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ theme: elements.ideaInput.value.trim() }) });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.detail || "Could not invent an idea.");
-      elements.ideaInput.value = payload.idea; state.selection.idea = payload.idea; elements.ownIdea.open = true;
-      updateCharCount(); renderLineup(); previewSelection();
-    } catch (error) { showLobbyError(error.message); }
-    finally { setRollLoading(false); elements.inventButton.disabled = false; elements.inventButton.textContent = "Invent an idea"; }
-  });
+  elements.apiButton.addEventListener("click", () => void rollCameras("api"));
+  elements.testButton.addEventListener("click", () => void rollCameras("test"));
   elements.transport.addEventListener("click", (event) => {
     const speedButton = event.target.closest("[data-speed]");
 
@@ -789,59 +715,6 @@ function bindEvents() {
   for (const type of ["pointermove", "pointerdown", "touchstart"]) {
     window.addEventListener(type, () => state.view === "show" && revealControls(), { passive: true });
   }
-
-  elements.pitchList.addEventListener("click", (event) => {
-    const card = event.target.closest("[data-pitch]");
-
-    if (card) {
-      selectPitch(card.dataset.pitch);
-    }
-  });
-
-  elements.pitchList.addEventListener("keydown", (event) => {
-    const keys = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
-
-    if (!(event.key in keys)) {
-      return;
-    }
-
-    event.preventDefault();
-    const ids = state.config.pitches.map((pitch) => pitch.id);
-    const current = Math.max(0, ids.indexOf(state.selection.pitchId));
-    selectPitch(ids[(current + keys[event.key] + ids.length) % ids.length], { focus: true });
-  });
-
-  elements.ideaInput.addEventListener("input", () => {
-    state.selection.idea = elements.ideaInput.value.trim();
-    updateCharCount();
-    renderLineup();
-    previewSelection();
-    hideLobbyError();
-  });
-
-  elements.ideaInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      void rollCameras();
-    }
-  });
-
-  elements.seedInput.addEventListener("input", () => {
-    const seed = readSeed();
-
-    if (seed !== null) {
-      state.selection.seed = seed;
-    }
-  });
-
-  elements.seedDice.addEventListener("click", () => {
-    elements.seedInput.value = String(1 + Math.floor(Math.random() * 9999));
-    state.selection.seed = Number(elements.seedInput.value);
-  });
-
-  elements.rollButton.addEventListener("click", () => {
-    void rollCameras();
-  });
 
   elements.verdict.addEventListener("click", (event) => {
     if (event.target === elements.verdict) {
@@ -909,7 +782,6 @@ function renderStaticLabels() {
     elements.transport.querySelector(`[data-action="${action}"]`).innerHTML = icon(name);
   }
 
-  elements.seedDice.innerHTML = icon("dice");
   setRollLoading(false);
 }
 
@@ -926,42 +798,25 @@ async function boot() {
   await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 1500))]);
   studio = createStudio({ mount: elements.stage });
   studio.setSharks(state.config.sharks);
-  voice = state.config.speech?.provider === "openai" ? createOpenAIVoice({
-    onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
-    onActivity(active, speakerId) {
-      if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null);
-    },
-  }) : createVoice({ sharks: state.config.sharks });
-  elements.inventButton.hidden = !state.config.generation;
-  elements.productionNote.textContent = state.config.generation ? "AI portrayals · OpenAI + Anthropic · synthetic voices · no real statements or endorsements." : "Scripted AI portrayals · device voices · no real statements or endorsements.";
-  if (state.config.generation) elements.seedInput.closest("label").title = "Controls the simulated investor decisions. Live generations vary.";
+  configureVoice("test");
+  renderCast();
+  setRollLoading(false);
 
   const url = readUrl();
   state.speed = url.speed ?? 1;
   state.voiceOn = Boolean(voice.supported && recall("voice", true));
   state.captions = Boolean(recall("captions", false));
   state.graphics = Boolean(recall("graphics", false));
-  const knownPitch = state.config.pitches.some((pitch) => pitch.id === url.pitchId);
-  state.selection.pitchId = knownPitch ? url.pitchId : state.config.pitches[0].id;
-  state.selection.seed = Number.isInteger(url.seed) && url.seed >= 1 ? Math.min(url.seed, state.config.limits.maxSeed) : state.config.defaults.seed;
-  elements.seedInput.value = String(state.selection.seed);
-  elements.seedInput.max = String(state.config.limits.maxSeed);
-
-  if (url.idea) {
-    elements.ideaInput.value = url.idea.slice(0, state.config.limits.ideaMaxLength);
-    state.selection.idea = elements.ideaInput.value.trim();
-    elements.ownIdea.open = true;
-  }
-
-  updateCharCount();
-  renderLineup();
+  const knownPitch = state.config.pitches.some(pitch => pitch.id === url.pitchId);
+  // Old scripted share links remain playable. URL parameters never start paid generation.
+  if (knownPitch && url.mode !== "api") state.replay = { pitchId: url.pitchId, seed: Number.isInteger(url.seed) && url.seed >= 1 ? Math.min(url.seed, state.config.limits.maxSeed) : 1 };
   previewSelection();
   renderTransport();
   bindEvents();
   setView("lobby");
   elements.body.classList.add("is-ready");
 
-  if (url.autoplay && (knownPitch || url.idea)) {
+  if (url.autoplay && knownPitch && url.mode !== "api") {
     await rollCameras();
   }
 }
