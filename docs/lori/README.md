@@ -6,7 +6,7 @@ This change adds an editable, reference-guided female character asset without re
 
 - `assets/lori/lori.blend`: editable meshes, facial keys, standing rest skeleton and studio.
 - `assets/lori/lori-seated-validation.blend`: explicit 90-degree knee and horizontal forearm pose in an armchair.
-- `public/models/lori/lori-rigged.glb`: self-contained runtime export, under 12 MB.
+- `public/models/lori/lori-rigged.glb`: self-contained runtime export, under 13 MB, including baked facial subdivision.
 - `docs/lori/portrait.png`, `standing.png`, `seated.png`: Cycles review views.
 - `assets/lori/anatomical-head.npz`: editable CC0 female head derivative with source-indexed expression deltas.
 

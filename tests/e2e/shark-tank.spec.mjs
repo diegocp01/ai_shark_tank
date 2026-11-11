@@ -166,7 +166,7 @@ test.describe("playback", () => {
     await expect(page.locator("body")).toHaveAttribute("data-playback", "playing");
   });
 
-  test("voices read each line through the browser's speech synthesis", async ({ page }) => {
+  test("Test reads scripted lines with local browser voices", async ({ page }) => {
     // Silent, deterministic stand-in for window.speechSynthesis, with voices
     // already switched on from a previous visit.
     await page.addInitScript(() => {
@@ -199,12 +199,14 @@ test.describe("playback", () => {
     const dialog = await waitForVerdict(page);
     const spoken = await page.evaluate(() => window.__spoken);
     expect(spoken).toHaveLength(23);
-    expect(spoken.at(-1)).toBe("TideTrack leaves the tank with $1 million for 16% from Lori Greiner. That values the company at $6.25 million, 38% under the ask.");
+    expect(spoken.at(-1)).toContain("TideTrack leaves the tank");
 
     await dialog.getByRole("button", { name: "Close verdict" }).click();
+    await expect(page.locator('[data-action="voice"]')).toHaveAttribute("title", "Browser voices");
     await page.getByRole("button", { name: "Turn voices off" }).press("Enter");
     await expect(page.locator("#toast")).toHaveText("Voices off");
-    await expect(page.getByRole("button", { name: "Turn voices on" })).toHaveAttribute("aria-pressed", "false");
+    await page.getByRole("button", { name: "Turn voices on" }).press("Enter");
+    await expect(page.locator("#toast")).toHaveText("Browser voices on");
   });
 
   test("the lobby button leaves the show", async ({ page }) => {

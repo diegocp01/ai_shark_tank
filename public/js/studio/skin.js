@@ -65,7 +65,7 @@ export function hasRig(model) {
 }
 
 // Scale skin to the studio's tone, keeping the model's painted variation.
-function matchSkinTone(model, tone) {
+function matchSkinTone(model, tone, root) {
   const target = new THREE.Color(tone);
 
   model.traverse((node) => {
@@ -87,6 +87,23 @@ function matchSkinTone(model, tone) {
         average.b += colors.getZ(index) / colors.count;
       }
 
+      // Anchor the neck pigment to the body's tone. The face keeps its painted
+      // variation, but an average over lips/eyes must not tint the neck seam.
+      if (node.userData.neckWeightsAligned) {
+        const positions = node.geometry.attributes.position;
+        const point = new THREE.Vector3();
+        const headY = node.userData.neckHeadY;
+        for (let i = 0; i < colors.count; i++) {
+          point.fromBufferAttribute(positions, i).applyMatrix4(node.matrixWorld);
+          root.worldToLocal(point);
+          const amount = 1 - THREE.MathUtils.smoothstep(point.y, headY + 0.025, headY + 0.07);
+          if (amount <= 0) continue;
+          colors.setXYZ(i,
+            THREE.MathUtils.lerp(colors.getX(i), average.r, amount),
+            THREE.MathUtils.lerp(colors.getY(i), average.g, amount),
+            THREE.MathUtils.lerp(colors.getZ(i), average.b, amount));
+        }
+      }
       node.material.color.setRGB(target.r / average.r, target.g / average.g, target.b / average.b);
     } else {
       node.material.color.copy(target);
@@ -94,7 +111,139 @@ function matchSkinTone(model, tone) {
   });
 }
 
+// Fair the lower neck of the authored head meshes into their existing
+// torso join. The previous short cylindrical fit ended in a shelf below the jaw.
+// Work only below the jaw and behind the chin; preserve all facial vertices and
+// expression deltas. No third-party geometry is copied into the character.
+function fairNeckJoin(mesh, geometry, root, skull) {
+  if (!/anatomical_(face|head)/i.test(mesh.name) || !mesh.morphTargetDictionary) return;
+  const male = /Mark|Kevin/i.test(mesh.name);
+  const positions = geometry.attributes.position;
+  const localToActor = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(mesh.matrixWorld);
+  const actorToLocal = localToActor.clone().invert();
+  const p = new THREE.Vector3();
+  const centerZ = male ? 0.018 : 0.008; // Metres, glTF +Z forward.
+  const changed = [];
+  for (let i = 0; i < positions.count; i++) {
+    p.fromBufferAttribute(positions, i).applyMatrix4(localToActor);
+    const blend = 1 - THREE.MathUtils.smoothstep(p.y, skull.y + (male ? 0.035 : 0.025), skull.y + (male ? 0.10 : 0.075));
+    // The front of the jaw/chin remains the original likeness.
+    const preserveChin = THREE.MathUtils.smoothstep(p.z - centerZ, male ? 0.055 : 0.035, male ? 0.085 : 0.065);
+    const amount = blend * (1 - preserveChin);
+    if (amount <= 0) continue;
+    const angle = Math.atan2(p.x, p.z - centerZ);
+    // A neck narrows above the collar, then flows into the jaw; it is not a
+    // straight cylinder with the source shoulder mantle compressed at its top.
+    const taper = THREE.MathUtils.smoothstep(p.y, skull.y - 0.055, skull.y + 0.055);
+    const rx = male ? THREE.MathUtils.lerp(0.057, 0.046, taper) : 0.041;
+    const rz = male ? THREE.MathUtils.lerp(0.052, 0.043, taper) : 0.039;
+    const neckX = rx * Math.sin(angle), neckZ = centerZ + rz * Math.cos(angle);
+    p.x = THREE.MathUtils.lerp(p.x, neckX, amount);
+    p.z = THREE.MathUtils.lerp(p.z, neckZ, amount);
+    p.applyMatrix4(actorToLocal);
+    positions.setXYZ(i, p.x, p.y, p.z);
+    changed.push([i, amount]);
+  }
+  if (!changed.length) return;
+  const originalNormals = geometry.attributes.normal.clone();
+  geometry.computeVertexNormals();
+  const repairedNormals = geometry.attributes.normal;
+  geometry.setAttribute("normal", originalNormals);
+  // UV/material splits duplicate vertices in glTF. Average coincident normals
+  // before writing them back, otherwise the repaired band becomes faceted.
+  const normalGroups = new Map();
+  const keyAt = i => `${Math.round(positions.getX(i) * 1e6)},${Math.round(positions.getY(i) * 1e6)},${Math.round(positions.getZ(i) * 1e6)}`;
+  for (let i = 0; i < positions.count; i++) {
+    const key = keyAt(i);
+    const n = normalGroups.get(key) || new THREE.Vector3();
+    n.x += repairedNormals.getX(i); n.y += repairedNormals.getY(i); n.z += repairedNormals.getZ(i);
+    normalGroups.set(key, n);
+  }
+  const n = new THREE.Vector3();
+  for (const [i, amount] of changed) {
+    n.fromBufferAttribute(originalNormals, i).lerp(normalGroups.get(keyAt(i)).clone().normalize(), amount).normalize();
+    originalNormals.setXYZ(i, n.x, n.y, n.z);
+  }
+  mesh.userData.neckJoinFaired = changed.length;
+}
+
+// The separate torso and face use identical neck radii. Give their overlap the
+// same surface normal, and tuck the hidden torso tip inside the facial surface
+// so coincident triangles do not leave a bright ring during head turns.
+function finishNeckSurface(mesh, geometry, root, skull) {
+  const female = /Lori|Barbara/i.test(mesh.name);
+  if (!female) return;
+  const positions = geometry.attributes.position, normals = geometry.attributes.normal;
+  const toActor = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(mesh.matrixWorld);
+  const normalToActor = new THREE.Matrix3().getNormalMatrix(toActor);
+  const normalToLocal = normalToActor.clone().invert();
+  const toLocal = toActor.clone().invert();
+  const p = new THREE.Vector3(), n = new THREE.Vector3(), radial = new THREE.Vector3();
+  for (let i = 0; i < positions.count; i++) {
+    p.fromBufferAttribute(positions, i).applyMatrix4(toActor);
+    if (Math.abs(p.x) > 0.06 || Math.abs(p.z - 0.008) > 0.055) continue;
+    const blend = THREE.MathUtils.smoothstep(p.y, skull.y - 0.055, skull.y - 0.025)
+      * (1 - THREE.MathUtils.smoothstep(p.y, skull.y + 0.015, skull.y + 0.05));
+    if (blend <= 0) continue;
+    radial.set(p.x / (0.041 ** 2), 0, (p.z - 0.008) / (0.039 ** 2)).normalize();
+    n.fromBufferAttribute(normals, i).applyMatrix3(normalToActor).normalize();
+    n.lerp(radial, blend).normalize().applyMatrix3(normalToLocal).normalize();
+    normals.setXYZ(i, n.x, n.y, n.z);
+    if (!mesh.morphTargetDictionary) {
+      const tuck = 0.001 * THREE.MathUtils.smoothstep(p.y, skull.y - 0.025, skull.y - 0.012);
+      p.addScaledVector(radial, -tuck).applyMatrix4(toLocal);
+      positions.setXYZ(i, p.x, p.y, p.z);
+    }
+  }
+}
+
+// The authored faces and torso necks overlap, but their original weights were
+// assigned independently. Use the same bind-space blend on every skin surface
+// at the join, so a head turn cannot peel one surface away from the other.
+// Facial geometry, expression deltas, bone positions and inverse binds stay intact.
+function alignNeckWeights(model, root) {
+  const neck = findBone(model, "neck"), head = findBone(model, "head"), chest = findBone(model, "chest");
+  if (!neck || !head || !chest) return;
+  root.updateMatrixWorld(true);
+  const base = root.worldToLocal(neck.getWorldPosition(new THREE.Vector3()));
+  const skull = root.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
+  const length = skull.y - base.y;
+  if (length < 0.04 || length > 0.18) return;
+  const upper = skull.y + 0.035;
+  const p = new THREE.Vector3();
+  model.traverse(mesh => {
+    if (!mesh.isSkinnedMesh || mesh.userData.neckWeightsAligned) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    // Clothes, pearls, hair and rigid facial features retain their authored rig.
+    if (!materials.every(material => /skin|anatomy/i.test(material.name) && !/crease/i.test(material.name))) return;
+    const bones = mesh.skeleton.bones;
+    const ids = [bones.indexOf(chest), bones.indexOf(neck), bones.indexOf(head)];
+    if (ids.some(id => id < 0)) return;
+    const geometry = mesh.geometry.clone(); // Loaded skins share geometry across actors.
+    fairNeckJoin(mesh, geometry, root, skull);
+    finishNeckSurface(mesh, geometry, root, skull);
+    const positions = geometry.attributes.position, weights = geometry.attributes.skinWeight, indices = geometry.attributes.skinIndex;
+    let changed = 0;
+    for (let i = 0; i < positions.count; i++) {
+      p.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+      root.worldToLocal(p);
+      if (p.y < base.y || p.y > upper || Math.abs(p.x - base.x) > 0.10 || Math.abs(p.z - base.z) > 0.11) continue;
+      const headWeight = THREE.MathUtils.smoothstep(p.y, base.y + length * 0.6, upper);
+      const neckWeight = (1 - headWeight) * THREE.MathUtils.smoothstep(p.y, base.y, base.y + length * 0.6);
+      indices.setXYZW(i, ids[0], ids[1], ids[2], 0);
+      weights.setXYZW(i, 1 - headWeight - neckWeight, neckWeight, headWeight, 0);
+      changed++;
+    }
+    if (changed) {
+      mesh.geometry = geometry;
+      mesh.userData.neckWeightsAligned = changed;
+      mesh.userData.neckHeadY = skull.y;
+    } else geometry.dispose();
+  });
+}
+
 export function createRetarget(model, { root, joints, skinTone = null }) {
+  alignNeckWeights(model, root);
   const pores = surfaceTexture("skin");
   const weave = surfaceTexture("fabric");
   model.traverse(node => {
@@ -112,7 +261,7 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
     node.material = Array.isArray(node.material) ? node.material.map(finish) : finish(node.material);
   });
   if (skinTone) {
-    matchSkinTone(model, skinTone);
+    matchSkinTone(model, skinTone, root);
   }
 
   const rootInverse = new THREE.Quaternion();
@@ -131,14 +280,6 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
   }
 
   const byName = Object.fromEntries(bones.map((entry) => [entry.name, entry]));
-  // Bring the imported skull closer to the collar without scaling the face or
-  // modifying shared geometry. Skin weights blend the shortened neck naturally.
-  const skull = byName.head?.bone;
-  if (skull && byName.neck && !model.userData.neckFitted) {
-    const length = skull.position.length();
-    if (length > 0.05) skull.position.multiplyScalar((length - Math.min(0.018, length * 0.2)) / length);
-    model.userData.neckFitted = true;
-  }
   const head = new THREE.Vector3();
   const tail = new THREE.Vector3();
 

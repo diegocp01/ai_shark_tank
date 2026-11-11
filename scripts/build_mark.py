@@ -30,7 +30,9 @@ for obj in objects:
   budget=12000 if 'scalp coverage' in obj.name else (6000 if obj.name.startswith('Hair') else (18000 if obj.name.startswith('Jacket |') else 7500))
   dec=obj.modifiers.new('Runtime topology budget','DECIMATE');dec.ratio=min(1,budget/len(obj.data.vertices));bpy.ops.object.modifier_apply(modifier=dec.name)
  bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
-head=next(o for o in objects if o.data.shape_keys)
+head=next(o for o in objects if 'anatomical face' in o.name)
+from face_subdivision import bake_face_subdivision
+bake_face_subdivision(head)
 bones={
  'pelvis':((0,.025,.94),(0,.025,1.04),None),
  'spine':((0,.025,1.04),(0,.020,1.22),'pelvis'),

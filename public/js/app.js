@@ -1,4 +1,5 @@
 import { createOpenAIVoice } from "./openaiVoice.js";
+import { createVoice } from "./voice.js";
 import { deckSlideAtBeat } from "/shared/deckTimeline.js";
 import { renderPitchDeck } from "./pitchDeck.js";
 import { applyBeat, createBoard } from "/shared/board.js";
@@ -6,7 +7,6 @@ import { formatMoneyFull, formatMoneyShort, formatOfferFull, formatPercent } fro
 import { createDirector } from "./director.js";
 import { icon } from "./icons.js";
 import { createStudio } from "./studio/studio.js";
-import { createVoice } from "./voice.js";
 
 const SPEEDS = [1, 1.5, 2, 3];
 const CUSTOM_FOUNDER = { name: "Founder", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" };
@@ -211,7 +211,7 @@ function configureVoice(mode) {
     onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
     onActivity(active, speakerId) { if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null); },
   }) : createVoice({ sharks: state.config.sharks });
-  state.voiceOn = Boolean(voice.supported && recall("voice", true));
+  state.voiceOn = Boolean(voice?.supported && recall("voice", true));
 }
 
 function showLobbyError(message) {
@@ -335,6 +335,7 @@ function renderTransport() {
   }
   const voiceButton = elements.transport.querySelector('[data-action="voice"]');
   voiceButton.hidden = !voice?.supported;
+  voiceButton.title = voice?.live ? "OpenAI voices" : "Browser voices";
   voiceButton.innerHTML = icon(state.voiceOn ? "voiceOn" : "voiceOff");
   voiceButton.setAttribute("aria-pressed", String(state.voiceOn));
   voiceButton.setAttribute("aria-label", state.voiceOn ? "Turn voices off" : "Turn voices on");
@@ -673,6 +674,7 @@ function handleTransportAction(action) {
       renderTransport();
       break;
     case "voice":
+      if (!voice?.supported) break;
       state.voiceOn = !state.voiceOn;
       remember("voice", state.voiceOn);
       if (state.voiceOn) void voice?.unlock?.().catch(() => {});
@@ -682,7 +684,7 @@ function handleTransportAction(action) {
       }
 
       renderTransport();
-      showToast(state.voiceOn ? (voice.live ? "OpenAI voices on" : voice.available ? "Device voices on" : "No installed device voice available") : "Voices off");
+      showToast(state.voiceOn ? (voice.live ? "OpenAI voices on" : voice.available ? "Browser voices on" : "No installed device voice available") : "Voices off");
       break;
     case "exit":
       backToLobby();
@@ -804,7 +806,7 @@ async function boot() {
 
   const url = readUrl();
   state.speed = url.speed ?? 1;
-  state.voiceOn = Boolean(voice.supported && recall("voice", true));
+  state.voiceOn = Boolean(voice?.supported && recall("voice", true));
   state.captions = Boolean(recall("captions", false));
   state.graphics = Boolean(recall("graphics", false));
   const knownPitch = state.config.pitches.some(pitch => pitch.id === url.pitchId);

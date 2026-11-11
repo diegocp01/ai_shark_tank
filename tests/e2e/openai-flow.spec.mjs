@@ -34,8 +34,18 @@ test('OpenAI idea flow, disclosure and server audio play without exposing creden
  expect(errors).toEqual([]);
 });
 
-test('Test uses device audio and scripted generation even when API is available',async({page})=>{
+test('Test uses browser voices and stays scripted even when API is available',async({page})=>{
  const posts=[];
+ await page.addInitScript(()=>{
+  localStorage.setItem('ai-shark-tank:voice','true');
+  window.__testSpoken=[];
+  window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
+  Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
+   getVoices:()=>[{name:'Local fixture',lang:'en-US',localService:true}],addEventListener(){},
+   speak(utterance){window.__testSpoken.push(utterance.text);setTimeout(()=>utterance.onend?.(),0);},
+   cancel(){},pause(){},resume(){}
+  }});
+ });
  await page.route('**/api/config',async route=>{
   const config=await(await route.fetch()).json();
   await route.fulfill({json:{...config,modes:{api:{available:true},test:{available:true}},speech:{provider:'openai'},generation:{model:'gpt-6.1-sol'}}});
@@ -45,9 +55,37 @@ test('Test uses device audio and scripted generation even when API is available'
  await expect(page.getByRole('button',{name:'API',exact:true})).toBeEnabled();
  await page.getByRole('button',{name:'Test',exact:true}).click();
  await expect(page.locator('body')).toHaveAttribute('data-view','show');
+ await expect.poll(()=>page.evaluate(()=>window.__testSpoken.length)).toBeGreaterThan(0);
  await page.getByRole('button',{name:'Skip to verdict'}).press('Enter');
  await expect(page.locator('dialog.end-card')).toBeVisible();
+ expect(await page.evaluate(()=>window.__testSpoken.length)).toBeGreaterThan(0);
  expect(posts).toHaveLength(1);
  expect(posts[0].url).toMatch(/\/api\/episodes$/);
  expect(posts[0].body).toEqual({mode:'test'});
+});
+
+
+test('OpenAI speech failure mutes the show without browser voice fallback', async ({page}) => {
+ await page.addInitScript(() => {
+  localStorage.setItem('ai-shark-tank:voice', 'true');
+  window.__browserSpeechCalls = 0;
+  Object.defineProperty(window, 'speechSynthesis', {configurable:true,value:{
+   getVoices:()=>[{name:'Device',lang:'en-US',localService:true}], addEventListener(){},
+   speak(){window.__browserSpeechCalls++;}, cancel(){}, pause(){}, resume(){}
+  }});
+ });
+ await page.route('**/api/config', async route => {
+  const config=await(await route.fetch()).json();
+  await route.fulfill({json:{...config,modes:{api:{available:true},test:{available:true}},speech:{provider:'openai'}}});
+ });
+ await page.route('**/api/episodes', async route => {
+  const payload=await(await route.fetch({postData:JSON.stringify({mode:'test'})})).json();
+  await route.fulfill({json:{...payload,speech:{token:'mock-failed-audio'}}});
+ });
+ await page.route('**/api/speech', route => route.fulfill({status:503,json:{detail:'OpenAI voices unavailable (mock).'}}));
+ await page.goto('/?quality=low');
+ await page.getByRole('button',{name:'API',exact:true}).click();
+ await expect(page.locator('#toast')).toContainText('OpenAI voices unavailable (mock).');
+ await expect(page.locator('[data-action="voice"]')).toHaveAttribute('aria-pressed','false');
+ expect(await page.evaluate(()=>window.__browserSpeechCalls)).toBe(0);
 });
