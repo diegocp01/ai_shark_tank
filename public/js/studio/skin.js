@@ -94,7 +94,87 @@ function matchSkinTone(model, tone) {
   });
 }
 
+// Fair the lower neck of the authored female head meshes into their existing
+// torso join. The previous short cylindrical fit ended in a shelf below the jaw.
+// Work only below the jaw and behind the chin; preserve all facial vertices and
+// expression deltas. No third-party geometry is copied into the character.
+function fairNeckJoin(mesh, geometry, root, skull) {
+  if (!/Lori|Barbara/i.test(mesh.name) || !mesh.morphTargetDictionary) return;
+  const positions = geometry.attributes.position;
+  const localToActor = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(mesh.matrixWorld);
+  const actorToLocal = localToActor.clone().invert();
+  const p = new THREE.Vector3();
+  const centerZ = 0.008; // Authored collar centre, in metres / glTF +Z forward.
+  const changed = [];
+  for (let i = 0; i < positions.count; i++) {
+    p.fromBufferAttribute(positions, i).applyMatrix4(localToActor);
+    const blend = 1 - THREE.MathUtils.smoothstep(p.y, skull.y + 0.025, skull.y + 0.075);
+    // The front of the jaw/chin remains the original likeness.
+    const preserveChin = THREE.MathUtils.smoothstep(p.z - centerZ, 0.035, 0.065);
+    const amount = blend * (1 - preserveChin);
+    if (p.y < skull.y - 0.025 || amount <= 0) continue;
+    const angle = Math.atan2(p.x, p.z - centerZ);
+    const neckX = 0.041 * Math.sin(angle), neckZ = centerZ + 0.039 * Math.cos(angle);
+    p.x = THREE.MathUtils.lerp(p.x, neckX, amount);
+    p.z = THREE.MathUtils.lerp(p.z, neckZ, amount);
+    p.applyMatrix4(actorToLocal);
+    positions.setXYZ(i, p.x, p.y, p.z);
+    changed.push(i);
+  }
+  if (!changed.length) return;
+  const originalNormals = geometry.attributes.normal.clone();
+  geometry.computeVertexNormals();
+  const repairedNormals = geometry.attributes.normal;
+  geometry.setAttribute("normal", originalNormals);
+  for (const i of changed) originalNormals.setXYZ(i, repairedNormals.getX(i), repairedNormals.getY(i), repairedNormals.getZ(i));
+  mesh.userData.neckJoinFaired = changed.length;
+}
+
+// The authored faces and torso necks overlap, but their original weights were
+// assigned independently. Use the same bind-space blend on every skin surface
+// at the join, so a head turn cannot peel one surface away from the other.
+// Facial geometry, expression deltas, bone positions and inverse binds stay intact.
+function alignNeckWeights(model, root) {
+  const neck = findBone(model, "neck"), head = findBone(model, "head"), chest = findBone(model, "chest");
+  if (!neck || !head || !chest) return;
+  root.updateMatrixWorld(true);
+  const base = root.worldToLocal(neck.getWorldPosition(new THREE.Vector3()));
+  const skull = root.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
+  const length = skull.y - base.y;
+  if (length < 0.04 || length > 0.18) return;
+  const upper = skull.y + 0.035;
+  const p = new THREE.Vector3();
+  model.traverse(mesh => {
+    if (!mesh.isSkinnedMesh || mesh.userData.neckWeightsAligned) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    // Clothes, pearls, hair and rigid facial features retain their authored rig.
+    if (!materials.every(material => /skin|anatomy/i.test(material.name) && !/crease/i.test(material.name))) return;
+    const bones = mesh.skeleton.bones;
+    const ids = [bones.indexOf(chest), bones.indexOf(neck), bones.indexOf(head)];
+    if (ids.some(id => id < 0)) return;
+    const geometry = mesh.geometry.clone(); // Loaded skins share geometry across actors.
+    fairNeckJoin(mesh, geometry, root, skull);
+    const positions = geometry.attributes.position, weights = geometry.attributes.skinWeight, indices = geometry.attributes.skinIndex;
+    let changed = 0;
+    for (let i = 0; i < positions.count; i++) {
+      p.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+      root.worldToLocal(p);
+      if (p.y < base.y || p.y > upper || Math.abs(p.x - base.x) > 0.10 || Math.abs(p.z - base.z) > 0.11) continue;
+      const headWeight = THREE.MathUtils.smoothstep(p.y, base.y + length * 0.6, upper);
+      const neckWeight = (1 - headWeight) * THREE.MathUtils.smoothstep(p.y, base.y, base.y + length * 0.6);
+      indices.setXYZW(i, ids[0], ids[1], ids[2], 0);
+      weights.setXYZW(i, 1 - headWeight - neckWeight, neckWeight, headWeight, 0);
+      changed++;
+    }
+    if (changed) {
+      mesh.geometry = geometry;
+      mesh.userData.neckWeightsAligned = changed;
+    } else geometry.dispose();
+  });
+}
+
 export function createRetarget(model, { root, joints, skinTone = null }) {
+  alignNeckWeights(model, root);
   const pores = surfaceTexture("skin");
   const weave = surfaceTexture("fabric");
   model.traverse(node => {
@@ -131,14 +211,6 @@ export function createRetarget(model, { root, joints, skinTone = null }) {
   }
 
   const byName = Object.fromEntries(bones.map((entry) => [entry.name, entry]));
-  // Bring the imported skull closer to the collar without scaling the face or
-  // modifying shared geometry. Skin weights blend the shortened neck naturally.
-  const skull = byName.head?.bone;
-  if (skull && byName.neck && !model.userData.neckFitted) {
-    const length = skull.position.length();
-    if (length > 0.05) skull.position.multiplyScalar((length - Math.min(0.018, length * 0.2)) / length);
-    model.userData.neckFitted = true;
-  }
   const head = new THREE.Vector3();
   const tail = new THREE.Vector3();
 
