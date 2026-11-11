@@ -34,7 +34,7 @@ test('OpenAI idea flow, disclosure and server audio play without exposing creden
  expect(errors).toEqual([]);
 });
 
-test('Test uses device audio and scripted generation even when API is available',async({page})=>{
+test('Test stays silent and scripted even when API is available',async({page})=>{
  const posts=[];
  await page.route('**/api/config',async route=>{
   const config=await(await route.fetch()).json();
@@ -50,4 +50,30 @@ test('Test uses device audio and scripted generation even when API is available'
  expect(posts).toHaveLength(1);
  expect(posts[0].url).toMatch(/\/api\/episodes$/);
  expect(posts[0].body).toEqual({mode:'test'});
+});
+
+
+test('OpenAI speech failure mutes the show without browser voice fallback', async ({page}) => {
+ await page.addInitScript(() => {
+  localStorage.setItem('ai-shark-tank:voice', 'true');
+  window.__browserSpeechCalls = 0;
+  Object.defineProperty(window, 'speechSynthesis', {configurable:true,value:{
+   getVoices:()=>[{name:'Device',lang:'en-US',localService:true}], addEventListener(){},
+   speak(){window.__browserSpeechCalls++;}, cancel(){}, pause(){}, resume(){}
+  }});
+ });
+ await page.route('**/api/config', async route => {
+  const config=await(await route.fetch()).json();
+  await route.fulfill({json:{...config,modes:{api:{available:true},test:{available:true}},speech:{provider:'openai'}}});
+ });
+ await page.route('**/api/episodes', async route => {
+  const payload=await(await route.fetch({postData:JSON.stringify({mode:'test'})})).json();
+  await route.fulfill({json:{...payload,speech:{token:'mock-failed-audio'}}});
+ });
+ await page.route('**/api/speech', route => route.fulfill({status:503,json:{detail:'OpenAI voices unavailable (mock).'}}));
+ await page.goto('/?quality=low');
+ await page.getByRole('button',{name:'API',exact:true}).click();
+ await expect(page.locator('#toast')).toContainText('OpenAI voices unavailable (mock).');
+ await expect(page.locator('[data-action="voice"]')).toHaveAttribute('aria-pressed','false');
+ expect(await page.evaluate(()=>window.__browserSpeechCalls)).toBe(0);
 });

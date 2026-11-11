@@ -20,7 +20,7 @@ let asset;
 async function load() {
   return asset ??= (async () => {
     const bytes = await readFile(new URL('../../public/models/lori/lori-rigged.glb', import.meta.url));
-    assert.ok(bytes.length < 12e6, 'runtime byte budget');
+    assert.ok(bytes.length < 13e6, 'runtime byte budget');
     assert.equal(bytes.readUInt32LE(0), 0x46546c67, 'GLB magic');
     assert.equal(bytes.readUInt32LE(4), 2, 'glTF 2.0');
     assert.equal(bytes.readUInt32LE(8), bytes.length, 'complete GLB');

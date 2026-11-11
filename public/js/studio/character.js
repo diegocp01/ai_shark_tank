@@ -945,8 +945,10 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
         lid.rotation.x += (lidAngle - lid.rotation.x) * (1 - Math.exp(-dt * (time < state.blinkUntil ? 55 : 22)));
       }
 
-      face.idleMouth.visible = !state.speaking;
-      face.talkMouth.visible = state.speaking;
+      // Imported skins animate their own mouth morphs. Re-enabling this fallback
+      // mesh puts a second, floating mouth at the procedural rig's chin height.
+      face.idleMouth.visible = !skin && !state.speaking;
+      face.talkMouth.visible = !skin && state.speaking;
 
       if (state.speaking) {
         face.talkMouth.scale.y = 0.12 + 0.38 * Math.abs(Math.sin(t * 10.5 + Math.sin(t * 3.3) * 2.2));

@@ -6,7 +6,6 @@ import { formatMoneyFull, formatMoneyShort, formatOfferFull, formatPercent } fro
 import { createDirector } from "./director.js";
 import { icon } from "./icons.js";
 import { createStudio } from "./studio/studio.js";
-import { createVoice } from "./voice.js";
 
 const SPEEDS = [1, 1.5, 2, 3];
 const CUSTOM_FOUNDER = { name: "Founder", suit: "#2a3550", accent: "#39e0c8", skin: "#c98e63", hair: "#2a1e18", hairStyle: "short" };
@@ -210,8 +209,8 @@ function configureVoice(mode) {
   voice = mode === "api" ? createOpenAIVoice({
     onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
     onActivity(active, speakerId) { if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null); },
-  }) : createVoice({ sharks: state.config.sharks });
-  state.voiceOn = Boolean(voice.supported && recall("voice", true));
+  }) : null; // Scripted Test is silent; speech is exclusively OpenAI in API mode.
+  state.voiceOn = Boolean(voice?.supported && recall("voice", true));
 }
 
 function showLobbyError(message) {
@@ -673,6 +672,7 @@ function handleTransportAction(action) {
       renderTransport();
       break;
     case "voice":
+      if (!voice?.supported) break;
       state.voiceOn = !state.voiceOn;
       remember("voice", state.voiceOn);
       if (state.voiceOn) void voice?.unlock?.().catch(() => {});
@@ -682,7 +682,7 @@ function handleTransportAction(action) {
       }
 
       renderTransport();
-      showToast(state.voiceOn ? (voice.live ? "OpenAI voices on" : voice.available ? "Device voices on" : "No installed device voice available") : "Voices off");
+      showToast(state.voiceOn ? "OpenAI voices on" : "Voices off");
       break;
     case "exit":
       backToLobby();
@@ -804,7 +804,7 @@ async function boot() {
 
   const url = readUrl();
   state.speed = url.speed ?? 1;
-  state.voiceOn = Boolean(voice.supported && recall("voice", true));
+  state.voiceOn = Boolean(voice?.supported && recall("voice", true));
   state.captions = Boolean(recall("captions", false));
   state.graphics = Boolean(recall("graphics", false));
   const knownPitch = state.config.pitches.some(pitch => pitch.id === url.pitchId);

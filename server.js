@@ -124,7 +124,7 @@ export function createApp({ deckProvider = mockDeckProvider, episodeProvider = g
     res.json({
       provider: describeProvider(provider),
       deckProvider: describeProvider(deckProvider),
-      speech: speechService?.describe() || { provider: "device" },
+      speech: speechService?.describe() || { provider: "none" },
       generation: aiSettings,
       cast: aiSettings?.cast || describeCast(),
       modes: { api: apiAvailability(), test: { available: true } },

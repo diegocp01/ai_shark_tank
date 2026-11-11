@@ -103,9 +103,10 @@ test('neck seams remain joined through turns while face geometry and cached asse
     const {clone}=await import('three/addons/utils/SkeletonUtils.js');
     const {createCharacter}=await import('/js/studio/character.js');
     const results=[];
-    for(const name of ['lori','barbara']){
+    for(const name of ['kevin','lori','barbara','mark']){
+      const male=['kevin','mark'].includes(name);
       const source=(await new GLTFLoader().loadAsync(`/models/${name}/${name}-rigged.glb`)).scene;
-      const originals=[];source.traverse(mesh=>{if(mesh.isMesh)originals.push({mesh,positions:mesh.geometry.attributes.position.array.slice(),weights:mesh.geometry.attributes.skinWeight?.array.slice()});});
+      const originals=[];source.traverse(mesh=>{if(mesh.isMesh)originals.push({mesh,positions:mesh.geometry.attributes.position.array.slice(),weights:mesh.geometry.attributes.skinWeight?.array.slice(),normals:mesh.geometry.attributes.normal?.array.slice(),colors:mesh.geometry.attributes.color?.array.slice()});});
       const model=clone(source), actor=createCharacter({look:{model:name},pose:'stand'});
       actor.attachSkin(model);actor.root.updateMatrixWorld(true);
       let head;model.traverse(n=>{if(n.isBone&&n.name==='head')head=n;});
@@ -119,7 +120,7 @@ test('neck seams remain joined through turns while face geometry and cached asse
         const samples=[];
         for(let i=0;i<positions.count;i++){
           const p=new THREE.Vector3().fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
-          if(p.y>headY+.075||(p.y>headY+.025&&p.z>.073))for(let axis=0;axis<3;axis++)faceDifference=Math.max(faceDifference,Math.abs(positions.array[i*3+axis]-original.positions[i*3+axis]));
+          if(p.y>headY+(male?.10:.075)||(p.y>headY+.025&&p.z>(male?.103:.073)))for(let axis=0;axis<3;axis++)faceDifference=Math.max(faceDifference,Math.abs(positions.array[i*3+axis]-original.positions[i*3+axis]));
           if(!mesh.userData.neckWeightsAligned)continue;
           const w=mesh.geometry.attributes.skinWeight;const values=[w.getX(i),w.getY(i),w.getZ(i),w.getW(i)];
           if(values.some(v=>!Number.isFinite(v)||v<0||v>1)||Math.abs(values.reduce((a,b)=>a+b)-1)>1e-5)invalidWeights++;
@@ -146,8 +147,8 @@ test('neck seams remain joined through turns while face geometry and cached asse
           const distance=position(a).distanceTo(position(b));maxSeparation=Math.max(maxSeparation,distance);maxDrift=Math.max(maxDrift,Math.abs(distance-rest));
         }
       }
-      const sourceChanged=originals.some(({mesh,positions,weights})=>positions.some((v,i)=>v!==mesh.geometry.attributes.position.array[i])||weights?.some((v,i)=>v!==mesh.geometry.attributes.skinWeight.array[i]));
-      results.push({name,changedNeck,faceDifference,invalidWeights,pairs:pairs.length,maxSeparation,maxDrift,sourceChanged});
+      const sourceChanged=originals.some(({mesh,positions,weights,normals,colors})=>normals?.some((v,i)=>v!==mesh.geometry.attributes.normal.array[i])||colors?.some((v,i)=>v!==mesh.geometry.attributes.color.array[i])||positions.some((v,i)=>v!==mesh.geometry.attributes.position.array[i])||weights?.some((v,i)=>v!==mesh.geometry.attributes.skinWeight.array[i]));
+      results.push({name,male,changedNeck,faceDifference,invalidWeights,pairs:pairs.length,maxSeparation,maxDrift,sourceChanged});
     }
     return results;
   });
@@ -157,8 +158,39 @@ test('neck seams remain joined through turns while face geometry and cached asse
     expect(r.faceDifference,r.name).toBe(0);
     expect(r.sourceChanged,r.name).toBe(false);
     expect(r.invalidWeights,r.name).toBe(0);
-    expect(r.pairs,r.name).toBeGreaterThan(5);
+    if(!r.male)expect(r.pairs,r.name).toBeGreaterThan(5);
     expect(r.maxSeparation,JSON.stringify(r)).toBeLessThan(.004);
     expect(r.maxDrift,JSON.stringify(r)).toBeLessThan(.002);
   }
+});
+
+
+test('speaking imported actors never reactivate fallback geometry', async ({page}) => {
+  await prepare(page);
+  const result = await page.evaluate(async () => {
+    const {GLTFLoader} = await import('three/addons/loaders/GLTFLoader.js');
+    const {createCharacter} = await import('/js/studio/character.js');
+    const leaked = [];
+    for (const name of ['kevin', 'lori', 'barbara', 'mark']) {
+      const actor = createCharacter({look:{model:name}});
+      const fallback = [];
+      actor.root.traverse(node => { if(node.isMesh) fallback.push(node); });
+      actor.attachSkin((await new GLTFLoader().loadAsync(`/models/${name}/${name}-rigged.glb`)).scene);
+      for (const pose of ['stand', 'sit', 'sitLean']) for (const speaking of [true, false, true]) {
+        actor.setPose(pose); actor.setSpeaking(speaking);
+        for (let frame=0; frame<90; frame++) {
+          actor.update(1/60, frame/60);
+          if(fallback.some(mesh => mesh.visible)) leaked.push({name,pose,speaking,frame});
+        }
+      }
+    }
+    // Procedural-only actors still need their original speaking mouth.
+    const actor = createCharacter({look:{}});
+    actor.setSpeaking(false); actor.update(1/60, 0);
+    const hidden = []; actor.root.traverse(n => { if(n.isMesh && !n.visible) hidden.push(n); });
+    actor.setSpeaking(true); actor.update(1/60, 1);
+    return {leaked, proceduralMouthVisible:hidden.some(n=>n.visible)};
+  });
+  expect(result.leaked).toEqual([]);
+  expect(result.proceduralMouthVisible).toBe(true);
 });

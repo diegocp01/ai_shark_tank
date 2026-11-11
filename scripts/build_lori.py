@@ -23,7 +23,9 @@ for obj in objects:
   budget=18000 if obj.name.startswith('Dress | asymmetric') else 9000
   dec=obj.modifiers.new('Runtime topology budget','DECIMATE');dec.ratio=min(1,budget/len(obj.data.vertices));bpy.ops.object.modifier_apply(modifier=dec.name)
  bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
-head=next(o for o in objects if o.data.shape_keys)
+head=next(o for o in objects if 'anatomical face' in o.name)
+from face_subdivision import bake_face_subdivision
+bake_face_subdivision(head)
 bones={'pelvis':((0,.02,.89),(0,.02,.99),None),'spine':((0,.02,.99),(0,.015,1.18),'pelvis'),'chest':((0,.015,1.18),(0,-.012,1.36),'spine'),'neck':((0,-.012,1.36),(0,-.012,1.46),'chest'),'head':((0,-.012,1.46),(0,-.012,1.69),'neck'),'jaw':((0,-.04,1.55),(0,-.10,1.49),'head')}
 for s,side in [(1,'L'),(-1,'R')]:
  bones.update({f'upperarm.{side}':((s*.175,.02,1.36),(s*.235,-.002,1.09),'chest'),f'forearm.{side}':((s*.235,-.002,1.09),(s*.245,-.04,.89),f'upperarm.{side}'),f'hand.{side}':((s*.245,-.04,.89),(s*.245,-.058,.77),f'forearm.{side}'),f'thigh.{side}':((s*.085,.02,.90),(s*.085,-.002,.49),'pelvis'),f'shin.{side}':((s*.085,-.002,.49),(s*.085,.01,.10),f'thigh.{side}'),f'foot.{side}':((s*.085,.01,.10),(s*.085,-.12,.04),f'shin.{side}')})
@@ -100,7 +102,7 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
 for o in objects:o.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/lori/lori-rigged.glb'),use_selection=True,export_format='GLB',export_yup=True,export_skins=True,export_morph=True,export_morph_normal=False,export_morph_tangent=False,export_animations=False,export_apply=False,export_cameras=False,export_lights=False,export_extras=True)
-report['glb_bytes']=(ROOT/'public/models/lori/lori-rigged.glb').stat().st_size;assert report['glb_bytes']<12_000_000
+report['glb_bytes']=(ROOT/'public/models/lori/lori-rigged.glb').stat().st_size;assert report['glb_bytes']<13_000_000  # Includes baked facial subdivision and expression cages.
 (ROOT/'docs/lori/rig-validation.json').write_text(json.dumps(report,indent=2));bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/lori/lori.blend'),compress=True)
 if '--render' in sys.argv:
  scene.render.filepath=str(ROOT/'docs/lori/portrait.png');bpy.ops.render.render(write_still=True)

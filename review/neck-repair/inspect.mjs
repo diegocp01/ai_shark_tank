@@ -1,7 +1,7 @@
 import { assertScriptedServer } from '../offline.js';
 await assertScriptedServer('http://127.0.0.1:5059');
 import { chromium } from '@playwright/test';
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 const browser=await chromium.launch({channel:'chrome',args:['--use-angle=metal']});
 const page=await browser.newPage({viewport:{width:1500,height:720}});
 try{
@@ -12,7 +12,7 @@ import {createCharacter} from '/js/studio/character.js';
 const config=await(await fetch('/api/config')).json();
 const founder={id:'founder',displayName:'Founder',color:'#79aaac',look:{top:'suit',suit:'#2a3545',skin:'#c98e63',hair:'#32271f',hairStyle:'short'}};
 window.actors=[];window.THREE=THREE;
-const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1500,660);renderer.setScissorTest(true);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.append(renderer.domElement);
+window.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1500,660);renderer.setScissorTest(true);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.append(renderer.domElement);
 for(const [i,person] of [founder,...config.sharks].entries()){
  const actor=createCharacter({look:person.look,color:person.color,seed:i+1,pose:'stand'});
  const scene=new THREE.Scene();scene.background=new THREE.Color('#29323b');scene.add(actor.root);scene.add(new THREE.HemisphereLight('#ffffff','#706459',2.5));const light=new THREE.DirectionalLight('#fff0dd',3);light.position.set(2,4,4);scene.add(light);
@@ -42,5 +42,26 @@ if(process.argv[2] === 'after') {
   await page.screenshot({path:`review/neck-repair/after-motion-${frame}.png`});
  }
 }
-console.log('Captured all cast members: neutral, turned, and sampled walking/seated motion.');
+if(['after','revision'].includes(process.argv[2])) {
+ const detailDir = process.argv[2] === 'after' ? 'review/neck-repair/closeups' : '/tmp/shark-neck-review';
+ await mkdir(detailDir, {recursive:true});
+ await page.setViewportSize({width:720,height:900});
+ await page.evaluate(()=>{renderer.setSize(720,900);renderer.setScissorTest(false);document.querySelectorAll('div').forEach(d=>d.remove());});
+ const summary=await page.evaluate(()=>actors.map(({actor})=>{let meshes=[];actor.root.traverse(m=>{if(!m.isSkinnedMesh)return;const p=m.geometry.attributes.position;const b=new THREE.Box3().setFromBufferAttribute(p);meshes.push({name:m.name,material:m.material.name,color:m.material.color.toArray(),vertexColors:m.material.vertexColors,box:[b.min.toArray(),b.max.toArray()],faired:m.userData.neckJoinFaired});});return {model:actor.look.model,meshes};}));
+ await writeFile('/tmp/shark-neck-review/meshes.json',JSON.stringify(summary,null,2));
+ for(const id of ['kevin','lori','barbara','mark']) {
+  for(const [angle,pos] of Object.entries({front:[0,1.6,1.2],quarter:[.75,1.6,1],profile:[1.2,1.6,.08]})) {
+   await page.evaluate(({id,pos})=>{
+    const {actor,scene,camera}=actors.find(a=>a.actor.look.model===id);
+    camera.aspect=720/900;camera.updateProjectionMatrix();camera.position.set(...pos);camera.lookAt(0,1.57,0);
+    actor.setPose('stand');actor.setWalking(false);
+    actor.setLookTarget(new THREE.Vector3(0,1.5,3));actor.setSpeaking(true);
+    for(let i=0;i<120;i++)actor.update(1/60,10+i/60);
+    renderer.setViewport(0,0,720,900);renderer.render(scene,camera);
+   }, {id,pos});
+   await page.screenshot({path:`${detailDir}/${id}-${angle}.png`});
+  }
+ }
+}
+console.log('Captured cast and requested close-ups.');
 }finally{await browser.close();}

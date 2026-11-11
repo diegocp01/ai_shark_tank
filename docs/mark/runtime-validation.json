@@ -1,23 +1,23 @@
 {
   "reimported_glb": true,
-  "bytes": 9324908,
+  "bytes": 11071348,
   "bones": 18,
   "morphs": {
     "blink": {
-      "affected_vertices": 300,
-      "maximum_displacement_m": 0.00968934831539773
+      "affected_vertices": 2246,
+      "maximum_displacement_m": 0.009085529758282099
     },
     "frown": {
-      "affected_vertices": 912,
-      "maximum_displacement_m": 0.0073553813392665795
+      "affected_vertices": 6236,
+      "maximum_displacement_m": 0.007062408195000135
     },
     "mouthOpen": {
-      "affected_vertices": 1215,
-      "maximum_displacement_m": 0.03293396167673469
+      "affected_vertices": 8102,
+      "maximum_displacement_m": 0.03276715881877241
     },
     "smile": {
-      "affected_vertices": 1263,
-      "maximum_displacement_m": 0.005002474059831007
+      "affected_vertices": 8018,
+      "maximum_displacement_m": 0.004928017976635708
     }
   },
   "neutral_jaw": true,

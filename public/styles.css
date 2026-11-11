@@ -254,6 +254,10 @@ body[data-playback="paused"] .player {
   transition: background 0.2s ease;
 }
 
+.player button[hidden] {
+  display: none;
+}
+
 .player button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
