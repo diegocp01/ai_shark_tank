@@ -166,7 +166,7 @@ test.describe("playback", () => {
     await expect(page.locator("body")).toHaveAttribute("data-playback", "playing");
   });
 
-  test("Test stays silent even when browser voices are installed and saved as enabled", async ({ page }) => {
+  test("Test reads scripted lines with local browser voices", async ({ page }) => {
     // Silent, deterministic stand-in for window.speechSynthesis, with voices
     // already switched on from a previous visit.
     await page.addInitScript(() => {
@@ -198,10 +198,15 @@ test.describe("playback", () => {
 
     const dialog = await waitForVerdict(page);
     const spoken = await page.evaluate(() => window.__spoken);
-    expect(spoken).toHaveLength(0);
+    expect(spoken).toHaveLength(23);
+    expect(spoken.at(-1)).toContain("TideTrack leaves the tank");
 
     await dialog.getByRole("button", { name: "Close verdict" }).click();
-    await expect(page.locator('[data-action="voice"]')).toBeHidden();
+    await expect(page.locator('[data-action="voice"]')).toHaveAttribute("title", "Browser voices");
+    await page.getByRole("button", { name: "Turn voices off" }).press("Enter");
+    await expect(page.locator("#toast")).toHaveText("Voices off");
+    await page.getByRole("button", { name: "Turn voices on" }).press("Enter");
+    await expect(page.locator("#toast")).toHaveText("Browser voices on");
   });
 
   test("the lobby button leaves the show", async ({ page }) => {

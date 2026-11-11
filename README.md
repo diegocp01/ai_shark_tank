@@ -50,7 +50,7 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
 
 1. **Choose API or Test.** These are the only start-screen actions. There is no idea field, preset selector, seed input or separate start step. The six-person roster shows each actor’s API provider and model.
 2. **API invents the show.** One click asks GPT to invent a fresh idea, develop its business and HTML pitch deck, then run the founder and five GPT/Claude judges through questions, offers and negotiation. API mode requires both server-side keys and uses generated OpenAI speech. Production can take several minutes; both start buttons stay disabled while it runs.
-3. **Test stays offline.** One click plays the scripted Barklight demo with deterministic HTML slides and silent playback. This bypasses all model, generated-deck and TTS services even on a server with both keys configured. Existing scripted share links can replay other fixtures.
+3. **Test stays offline.** One click plays the scripted Barklight demo with deterministic HTML slides and local browser voices. This bypasses all model, generated-deck and TTS services even on a server with both keys configured. Existing scripted share links can replay other fixtures.
 4. **Watch like TV.** The camera follows the pitch, questions, offers, negotiation and verdict. Captions and offer graphics are optional and off by default. Controls fade away; the cast roster appears only on the start screen.
 5. **Replay or download.** Show verdict opens the final terms and feasibility report, with replay, Markdown report and HTML deck downloads. Watch again reuses the loaded show. Next pitch returns to API / Test; choosing API again invents a new idea. API links reopen the start screen and never automatically spend credits.
 
@@ -68,7 +68,7 @@ Barbara Corcoran’s reference-guided study is at [http://127.0.0.1:5050/barbara
 | `R` | Restart the episode |
 | `C` | Toggle captions |
 
-The player appears on pointer movement, tap, or keyboard interaction and hides after 2.6 seconds, including while paused and on phones. Keyboard focus keeps the controls accessible. CC (or C) toggles captions; Info toggles offer graphics. Both preferences are remembered. Speeds go from 1× to 3×. API mode plays generated speech through Web Audio, prefetches the current and next lines, and supports pause/resume, skip and replay. Test mode is silent and never calls a TTS service or browser speech synthesis. A failed live voice request disables speech with an error message; CC remains available.
+The player appears on pointer movement, tap, or keyboard interaction and hides after 2.6 seconds, including while paused and on phones. Keyboard focus keeps the controls accessible. CC (or C) toggles captions; Info toggles offer graphics. Both preferences are remembered. Speeds go from 1× to 3×. API mode plays generated speech through Web Audio, prefetches the current and next lines, and supports pause/resume, skip and replay. Test mode uses installed local browser voices and never calls a TTS API. A failed live voice request disables speech with an error message; CC remains available.
 
 The 3D studio renders with WebGL 2: burgundy leather chairs with walnut frames and brass nailheads, a woven patterned rug, recessed timber panels, stone bays, glass pendants, physical product props, broad softbox lighting, soft shadows, subtle bloom, and MSAA. High quality adds a restrained planar floor reflection; stationary set meshes are batched by material. All textures are generated locally and fonts use the system stack. Rendering uses no CDN assets or remote fonts. OpenAI/Anthropic generation and OpenAI speech requests go through the local Express server; the browser never receives an API key. The character models remain stylized studies rather than photoreal scans. Without GPU acceleration it switches itself to a light mode (lower resolution, no shadows); `?quality=low` or `?quality=high` forces either. Without WebGL at all, the show still plays with captions and graphics.
 
@@ -147,7 +147,8 @@ public/js/studio/set.js        Leather chairs, timber architecture, props, rug, 
 public/js/studio/character.js  Rigged procedural 3D people (poses, walking, gestures, gaze, blinking, talking)
 public/js/studio/skin.js       Drives rigged GLB characters (Kevin, Lori, Barbara, Mark) from the procedural joint rig
 public/js/studio/textures.js   Local textures: outfits, woven rug, material detail, product board, wood, marble
-public/js/openaiVoice.js       OpenAI speech playback; no device-voice fallback
+public/js/openaiVoice.js       OpenAI speech playback in API mode
+public/js/voice.js             Local browser speech in Test mode
 tests/node/                    Engine, reducer, director, and HTTP API tests
 tests/e2e/                     Playwright tests against the real server
 ```

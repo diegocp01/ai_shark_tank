@@ -7,7 +7,7 @@ Validated on 2026-11-11 using scripted responses only. No model or TTS API calls
 - Reviewed neutral, speaking/head-turn and four walking/seated frame captures for all six characters, plus front/quarter/profile close-ups of each imported character.
 - Reimported Mark and Lori’s updated GLBs into Blender and checked their skeletons and expressions.
 - Regression covers hidden fallback meshes during speaking, so the duplicate mouth cannot reappear on an imported character.
-- Mocked OpenAI audio success and failure; Test mode stays silent even with a saved voice preference.
+- Mocked OpenAI audio success and failure; Test mode uses mocked local browser voices even when API mode is available, with no speech endpoint calls.
 
 The seam regression samples overlapping neck surfaces while standing, sitting and leaning, looking left and right with speech enabled:
 

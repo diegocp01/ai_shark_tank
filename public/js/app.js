@@ -1,4 +1,5 @@
 import { createOpenAIVoice } from "./openaiVoice.js";
+import { createVoice } from "./voice.js";
 import { deckSlideAtBeat } from "/shared/deckTimeline.js";
 import { renderPitchDeck } from "./pitchDeck.js";
 import { applyBeat, createBoard } from "/shared/board.js";
@@ -209,7 +210,7 @@ function configureVoice(mode) {
   voice = mode === "api" ? createOpenAIVoice({
     onError(message) { state.voiceOn = false; voice.cancel(); renderTransport(); showToast(message); },
     onActivity(active, speakerId) { if (state.director?.state.status === "playing") studio.setSpeaker(active ? speakerId : null); },
-  }) : null; // Scripted Test is silent; speech is exclusively OpenAI in API mode.
+  }) : createVoice({ sharks: state.config.sharks });
   state.voiceOn = Boolean(voice?.supported && recall("voice", true));
 }
 
@@ -334,6 +335,7 @@ function renderTransport() {
   }
   const voiceButton = elements.transport.querySelector('[data-action="voice"]');
   voiceButton.hidden = !voice?.supported;
+  voiceButton.title = voice?.live ? "OpenAI voices" : "Browser voices";
   voiceButton.innerHTML = icon(state.voiceOn ? "voiceOn" : "voiceOff");
   voiceButton.setAttribute("aria-pressed", String(state.voiceOn));
   voiceButton.setAttribute("aria-label", state.voiceOn ? "Turn voices off" : "Turn voices on");
@@ -682,7 +684,7 @@ function handleTransportAction(action) {
       }
 
       renderTransport();
-      showToast(state.voiceOn ? "OpenAI voices on" : "Voices off");
+      showToast(state.voiceOn ? (voice.live ? "OpenAI voices on" : voice.available ? "Browser voices on" : "No installed device voice available") : "Voices off");
       break;
     case "exit":
       backToLobby();

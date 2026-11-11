@@ -37,4 +37,4 @@ These repairs do not make the cast photorealistic. The founder and Daymond still
 
 ## Speech
 
-API mode exclusively uses OpenAI TTS with distinct cast voices. Test mode is silent; it never uses browser speech or a TTS API. Failed live speech is reported and muted without falling back to device voices. Audio tests use locally mocked responses.
+API mode exclusively uses OpenAI TTS with distinct cast voices. Test mode uses local browser voices; it never calls a TTS API. Failed live speech is reported and muted without falling back to device voices. Audio tests use locally mocked responses.
