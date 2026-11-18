@@ -26,4 +26,8 @@ After: ![After head turn](after-turn.png)
 
 For recapture instructions and reference provenance, see [the repair notes](../../docs/characters/neck-repair.md).
 
-The founder and Daymond remain procedural placeholders. Hair, cloth and skin still need an asset-quality pass to meet the requested realistic visual style; these test results do not certify photorealism.
+## Full cast update on November 18
+
+Daymond and the founder now use fitted skinned bodies. The judges’ seated elbow angles place their hands closer to their laps. The cast remains stylized. The 17 scripted browser checks in the character-motion and shark-tank suites passed, including the six-character studio load, walking and neck regressions.
+
+[Full bodies in motion](anatomy-motion-0.png) · [Speaking and turning](anatomy-turn.png) · [Presenter in the studio](anatomy-studio.png)

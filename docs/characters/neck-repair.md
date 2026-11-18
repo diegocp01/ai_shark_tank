@@ -33,7 +33,7 @@ The browser regression checks imported neck bind lengths, finite skinned vertice
 
 ## Visual limits
 
-These repairs do not make the cast photorealistic. The founder and Daymond still use procedural placeholder characters; the other four retain stylized likeness studies, with simplified hair, materials and tailoring. Passing rig tests is not visual acceptance of those assets.
+These repairs do not make the cast photorealistic. The studio fits Daymond and the presenter to the existing anatomical rigs, with fitted facial features, articulated hands and tailored clothing. Both rendering modes load the six figures. Passing rig tests is not visual acceptance of those assets.
 
 ## Speech
 

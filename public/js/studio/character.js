@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createRetarget } from "./skin.js";
+import { fitTailoring } from "./castAnatomy.js";
 import { outfitTexture, shadeHex, surfaceTexture } from "./textures.js";
 
 const HEAD_R = 0.122;
@@ -67,9 +68,9 @@ const POSES = {
     spine: [-0.12, 0, 0],
     neck: [0.06, 0, 0],
     shoulderL: [-0.12, 0, 0.26],
-    elbowL: [-1.32, 0.1, 0],
+    elbowL: [-1.02, -0.32, 0],
     shoulderR: [-0.12, 0, -0.26],
-    elbowR: [-1.32, -0.1, 0],
+    elbowR: [-1.02, 0.32, 0],
     hipL: [-1.42, 0.06, 0],
     kneeL: [1.42, 0, 0],
     hipR: [-1.42, -0.06, 0],
@@ -109,9 +110,9 @@ const POSES = {
     spine: [-0.24, 0, 0],
     neck: [0.16, 0, 0],
     shoulderL: [-0.08, 0, 0.3],
-    elbowL: [-1.25, 0.15, 0],
+    elbowL: [-1.00, -0.25, 0],
     shoulderR: [-0.08, 0, -0.3],
-    elbowR: [-1.25, -0.15, 0],
+    elbowR: [-1.00, 0.25, 0],
     hipL: [-1.36, 0.24, 0],
     kneeL: [1.36, 0, 0],
     hipR: [-1.36, -0.24, 0],
@@ -123,9 +124,9 @@ const POSES = {
     spine: [-0.1, 0, 0],
     neck: [0.06, 0, 0],
     shoulderL: [-0.3, 0, 0.2],
-    elbowL: [-1.15, -0.45, 0],
+    elbowL: [-0.97, -0.38, 0],
     shoulderR: [-0.3, 0, -0.2],
-    elbowR: [-1.15, 0.45, 0],
+    elbowR: [-0.97, 0.38, 0],
     hipL: [-1.72, -0.36, 0],
     kneeL: [1.32, 0, 0],
     hipR: [-1.42, 0.04, 0],
@@ -812,6 +813,7 @@ export function createCharacter({ look: rawLook, color = "#39e0c8", seed = 1, po
       // Bind with the joints at rest so the model's rest pose lines up.
       const saved = Object.entries({ pelvis, head: headPivot, ...joints }).map(([name, node]) => [node, node.rotation.clone()]);
       saved.forEach(([node]) => node.rotation.set(0, 0, 0));
+      fitTailoring(model);
       root.add(model);
       skin = createRetarget(model, { root, joints: { pelvis, head: headPivot, ...joints }, skinTone: look.skin });
       saved.forEach(([node, rotation]) => node.rotation.copy(rotation));
