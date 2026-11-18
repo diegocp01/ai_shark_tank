@@ -9,6 +9,7 @@ await page.route('**/character-review',r=>r.fulfill({contentType:'text/html',bod
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createCharacter} from '/js/studio/character.js';
+const {fitCastModel,founderTemplate}=await import('/js/studio/castAnatomy.js');
 const config=await(await fetch('/api/config')).json();
 const founder={id:'founder',displayName:'Founder',color:'#79aaac',look:{top:'suit',suit:'#2a3545',skin:'#c98e63',hair:'#32271f',hairStyle:'short'}};
 window.actors=[];window.THREE=THREE;
@@ -16,7 +17,9 @@ window.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:tr
 for(const [i,person] of [founder,...config.sharks].entries()){
  const actor=createCharacter({look:person.look,color:person.color,seed:i+1,pose:'stand'});
  const scene=new THREE.Scene();scene.background=new THREE.Color('#29323b');scene.add(actor.root);scene.add(new THREE.HemisphereLight('#ffffff','#706459',2.5));const light=new THREE.DirectionalLight('#fff0dd',3);light.position.set(2,4,4);scene.add(light);
- if(person.look.model){const gltf=await new GLTFLoader().loadAsync('/models/'+person.look.model+'/'+person.look.model+'-rigged.glb');actor.attachSkin(gltf.scene);}
+ const role=person.id==='founder'?'founder':person.id==='max'?'daymond':null;
+ const template=role==='founder'?founderTemplate(person.look):role==='daymond'?'mark':person.look.model;
+ if(template){const gltf=await new GLTFLoader().loadAsync('/models/'+template+'/'+template+'-rigged.glb');if(role)fitCastModel(gltf.scene,person.look,role);actor.attachSkin(gltf.scene);}
  const camera=new THREE.PerspectiveCamera(31,250/660,.01,30);camera.position.set(.42,1.52,1.9);camera.lookAt(0,1.47,0);
  const label=document.createElement('div');label.textContent=person.displayName;label.style.cssText='position:absolute;top:680px;left:'+i*250+'px;width:250px;text-align:center;color:white;font:16px Arial';document.body.append(label);
  window.actors.push({actor,scene,camera,id:person.id});
@@ -28,7 +31,7 @@ await page.goto('http://127.0.0.1:5059/character-review');await page.waitForFunc
 await page.screenshot({path:`review/neck-repair/${process.argv[2]||'before'}-neutral.png`});
 await page.evaluate(()=>{for(const {actor} of actors){actor.setLookTarget(new THREE.Vector3(2,1.1,2));actor.setSpeaking(true);}for(let i=0;i<120;i++)render(2+i/60);});
 await page.screenshot({path:`review/neck-repair/${process.argv[2]||'before'}-turn.png`});
-if(process.argv[2] === 'after') {
+if(['after','anatomy'].includes(process.argv[2])) {
  await page.evaluate(()=>{
    for(const {actor,scene,camera,id} of actors){
     camera.position.set(.4,1.2,4);camera.lookAt(0,.9,0);actor.setSpeaking(false);actor.setLookTarget(new THREE.Vector3(1,1.2,3));
@@ -39,7 +42,7 @@ if(process.argv[2] === 'after') {
  });
  for(let frame=0;frame<4;frame++){
   await page.evaluate(frame=>{for(let i=0;i<14;i++)render(7+(frame*14+i)/60);},frame);
-  await page.screenshot({path:`review/neck-repair/after-motion-${frame}.png`});
+  await page.screenshot({path:`review/neck-repair/${process.argv[2]}-motion-${frame}.png`});
  }
 }
 if(['after','revision'].includes(process.argv[2])) {

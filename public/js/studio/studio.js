@@ -11,6 +11,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { createCharacter } from "./character.js";
+import { fitCastModel, founderTemplate } from "./castAnatomy.js";
 import { hasRig } from "./skin.js";
 import { addStudioLights, createSet, FOUNDER_MARK, seatTransform } from "./set.js";
 
@@ -443,13 +444,15 @@ export function createStudio({ mount }) {
         scene.add(character.root);
         sharks.set(shark.id, character);
 
-        // Rigged models are heavy (hundreds of thousands of triangles); light mode keeps the procedural look.
-        if (shark.look?.model && quality === "high") {
-          void loadRiggedModel(shark.look.model).then((model) => {
-            if (model && sharks.get(shark.id) === character) {
-              character.attachSkin(cloneSkinned(model));
-              mount.dataset[`${shark.id}Model`] = shark.look.model;
-            }
+        const daymond = shark.id === "max";
+        const template = daymond ? "mark" : shark.look?.model;
+        if (template) {
+          void loadRiggedModel(template).then(source => {
+            if (!source || sharks.get(shark.id) !== character) return;
+            const model = cloneSkinned(source);
+            if (daymond) fitCastModel(model, shark.look, "daymond");
+            character.attachSkin(model);
+            mount.dataset[`${shark.id}Model`] = daymond ? "daymond" : template;
           });
         }
       });
@@ -483,6 +486,15 @@ export function createStudio({ mount }) {
 
         scene.add(founder.root);
         founderLook = key;
+        const presenter = founder;
+        delete mount.dataset.founderModel;
+        void loadRiggedModel(founderTemplate(look)).then(source => {
+          if (!source || founder !== presenter) return;
+          const model = cloneSkinned(source);
+          fitCastModel(model, look, "founder");
+          presenter.attachSkin(model);
+          mount.dataset.founderModel = "founder";
+        });
       }
 
       set.board.setPitch(pitch);

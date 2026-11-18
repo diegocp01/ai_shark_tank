@@ -35,7 +35,7 @@ Five AI portrayals use the real Shark Tank names below; one fictional founder pr
 | Barbara Corcoran | Founder & Sales | The rigged Blender model of Barbara Corcoran: blonde pixie cut, red dress, pearls |
 | Mark Cuban | Technology & Scale | The rigged Blender model of Mark Cuban: short dark hair, navy blazer, open collar, dark jeans |
 
-Kevin O’Leary, Lori Greiner, Barbara Corcoran, and Mark Cuban use `public/models/<kevin|lori|barbara|mark>/<name>-rigged.glb`. They share an 18-bone contract plus `mouthOpen`, `blink`, `smile`, and `frown` morphs (see `assets/kevin/RIGGING.md` and each model's docs). `public/js/studio/skin.js` drives them from the same procedural joint rig as Daymond John, so they sit, gesture, cross their arms when they're out, turn to whoever is talking, talk, blink, and stand for the handshake. Any shark whose look names a `model` loads `/models/<model>/<model>-rigged.glb` the same way. In light mode (software WebGL), or if a model file is missing, that shark uses a procedural stand-in. Daymond John is procedural.
+All five judges and the presenter use skinned bodies driven by the same 18-bone rig. Kevin, Lori, Barbara and Mark have dedicated GLBs under `public/models/`. Daymond uses a fitted variant of Mark’s rig with a reshaped face, shaved head and goatee. The presenter uses a fitted Mark or Lori rig with the pitch’s coloring. Both studio quality settings load the local assets. A procedural stand-in appears while a model loads or if the file is unavailable.
 
 To review the Kevin asset on its own, open [http://127.0.0.1:5050/kevin.html](http://127.0.0.1:5050/kevin.html) (portrait and full-figure framing, three angles, orbit, zoom). The editable Blender sources are `assets/kevin/kevin.blend` and `assets/kevin/kevin-rigged.blend`.
 
@@ -145,7 +145,7 @@ public/js/openaiVoice.js       Web Audio playback, prefetch, pause/resume and ca
 public/js/studio/studio.js     3D renderer, blocking, and the camera director (shots and cuts)
 public/js/studio/set.js        Leather chairs, timber architecture, props, rug, reflections and lights
 public/js/studio/character.js  Rigged procedural 3D people (poses, walking, gestures, gaze, blinking, talking)
-public/js/studio/skin.js       Drives rigged GLB characters (Kevin, Lori, Barbara, Mark) from the procedural joint rig
+public/js/studio/skin.js       Drives the rigged cast from the procedural joint rig
 public/js/studio/textures.js   Local textures: outfits, woven rug, material detail, product board, wood, marble
 public/js/openaiVoice.js       OpenAI speech playback in API mode
 public/js/voice.js             Local browser speech in Test mode

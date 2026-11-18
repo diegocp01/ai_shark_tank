@@ -47,7 +47,7 @@ test.describe("title screen", () => {
     await page.screenshot({ path: testInfo.outputPath("title.png") });
   });
 
-  test("seats the rigged Kevin, Lori, Barbara, and Mark models in their chairs", async ({ page }) => {
+  test("loads anatomical models for five seated judges and the presenter", async ({ page }) => {
     // Full quality loads rigged models; software WebGL is slow, so allow extra time.
     test.setTimeout(150_000);
     await page.goto("/?quality=high");
@@ -56,6 +56,8 @@ test.describe("title screen", () => {
     await expect(page.locator(".stage")).toHaveAttribute("data-luna-model", "lori", { timeout: 120_000 });
     await expect(page.locator(".stage")).toHaveAttribute("data-vera-model", "barbara", { timeout: 120_000 });
     await expect(page.locator(".stage")).toHaveAttribute("data-wes-model", "mark", { timeout: 120_000 });
+    await expect(page.locator(".stage")).toHaveAttribute("data-max-model", "daymond");
+    await expect(page.locator(".stage")).toHaveAttribute("data-founder-model", "founder");
   });
 
   test("API URLs cannot start paid generation automatically", async ({ page }) => {
